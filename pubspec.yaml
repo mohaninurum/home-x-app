@@ -19,7 +19,7 @@ publish_to: 'none' # Remove this line if you wish to publish to pub.dev
 version: 1.0.0+1
 
 environment:
-  sdk: ^3.9.0
+  sdk: ^3.10.7
 
 # Dependencies specify other packages that your package needs in order to work.
 # To automatically upgrade your package dependencies to the latest versions
@@ -34,6 +34,15 @@ dependencies:
   # The following adds the Cupertino Icons font to your application.
   # Use with the CupertinoIcons class for iOS style icons.
   cupertino_icons: ^1.0.8
+  flutter_riverpod: ^3.2.1
+  shared_preferences: ^2.5.4
+  local_auth: ^3.0.1
+  local_auth_android: ^2.0.5
+  local_auth_ios: ^1.1.7
+  audioplayers: ^6.6.0
+  url_launcher: ^6.3.2
+  image_picker: ^1.2.1
+  path_provider: ^2.1.5
 
 dev_dependencies:
   flutter_test:
@@ -44,30 +53,18 @@ dev_dependencies:
   # activated in the `analysis_options.yaml` file located at the root of your
   # package. See that file for information about deactivating specific lint
   # rules and activating additional ones.
-  flutter_lints: ^5.0.0
-  # CRITICAL: Core UI and responsive design - DO NOT REMOVE OR MODIFY
-  sizer: ^2.0.15              # Required for responsive design system
-  flutter_svg: ^2.0.9        # Required for SVG icon support
-  google_fonts: ^6.1.0       # Required for typography (replaces local fonts)
-  shared_preferences: ^2.2.2 # Required for local data storage
-  web: ^1.1.1
-
-  # Feature dependencies - safe to modify
-  cached_network_image: ^3.3.1
-  connectivity_plus: ^6.1.4
-  dio: ^5.4.0
-  fluttertoast: ^8.2.4
-  fl_chart: ^0.65.0
+  flutter_lints: ^6.0.0
 
 # For information on the generic Dart part of this file, see the
 # following page: https://dart.dev/tools/pub/pubspec
 
 # The following section is specific to Flutter packages.
 flutter:
-  uses-material-design: true # CRITICAL: Required for Material icon font - DO NOT REMOVE
-  assets:
-    - assets/
-    - assets/images/
+
+  # The following line ensures that the Material Icons font is
+  # included with your application, so that you can use the icons in
+  # the material Icons class.
+  uses-material-design: true
 
   # To add assets to your application, add an assets section, like this:
   # assets:
