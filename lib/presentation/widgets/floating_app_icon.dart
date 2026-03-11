@@ -1,5 +1,3 @@
-import 'dart:math';
-
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -36,22 +34,11 @@ class _FloatingAppIconState extends ConsumerState<FloatingAppIcon> {
 
 
 
-  Uint8List removeBackgroundSmooth(Uint8List bytes) {
+  Uint8List removeWhiteBackground(Uint8List bytes) {
     final image = img.decodeImage(bytes);
     if (image == null) return bytes;
 
-    // 4 corner pixels se background detect
-    final p1 = image.getPixel(0, 0);
-    final p2 = image.getPixel(image.width - 1, 0);
-    final p3 = image.getPixel(0, image.height - 1);
-    final p4 = image.getPixel(image.width - 1, image.height - 1);
-
-    int bgR = ((p1.r + p2.r + p3.r + p4.r) / 4).round();
-    int bgG = ((p1.g + p2.g + p3.g + p4.g) / 4).round();
-    int bgB = ((p1.b + p2.b + p3.b + p4.b) / 4).round();
-
-    const double threshold = 60;
-    const double smoothRange = 80;
+    const int threshold = 220;
 
     for (int y = 0; y < image.height; y++) {
       for (int x = 0; x < image.width; x++) {
@@ -61,20 +48,15 @@ class _FloatingAppIconState extends ConsumerState<FloatingAppIcon> {
         int g = pixel.g.toInt();
         int b = pixel.b.toInt();
 
-        // Euclidean color distance
-        double diff = sqrt(
-          pow(r - bgR, 2) +
-              pow(g - bgG, 2) +
-              pow(b - bgB, 2),
-        );
+        // white distance detect
+        int diff = (255 - r) + (255 - g) + (255 - b);
 
-        if (diff < threshold) {
-          // pure background
+        if (r > threshold && g > threshold && b > threshold) {
+          // fully transparent
           image.setPixelRgba(x, y, r, g, b, 0);
-        } else if (diff < threshold + smoothRange) {
-          // smooth transition
-          double t = (diff - threshold) / smoothRange;
-          int alpha = (t * 255).clamp(0, 255).toInt();
+        } else if (diff < 120) {
+          // smooth edge transparency
+          int alpha = (diff * 2).clamp(0, 255);
           image.setPixelRgba(x, y, r, g, b, alpha);
         }
       }
@@ -101,7 +83,7 @@ class _FloatingAppIconState extends ConsumerState<FloatingAppIcon> {
               )
             ],
             image: DecorationImage(
-              image: MemoryImage(removeBackgroundSmooth(widget.app.iconBytes) ),
+              image: MemoryImage(removeWhiteBackground(widget.app.iconBytes) ),
               fit: BoxFit.cover,
             ),
           ),
