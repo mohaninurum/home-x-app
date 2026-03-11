@@ -1,3 +1,4 @@
+import 'dart:convert';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../domain/app_info.dart';
@@ -7,6 +8,7 @@ import 'dart:typed_data';
 import 'package:image/image.dart' as img;
 import 'package:path_provider/path_provider.dart';
 import 'dart:io';
+import 'package:flutter/material.dart' show Offset;
 
 Uint8List removeWhiteBackground(Uint8List bytes) {
   final image = img.decodeImage(bytes);
@@ -113,6 +115,22 @@ class HomeAppsNotifier extends AsyncNotifier<Set<String>> {
       await addApp(packageName);
     }
   }
+
+  Future<void> addAppAt(String packageName, double x, double y) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setDouble('${packageName}_x', x);
+    await prefs.setDouble('${packageName}_y', y);
+    
+    final current = state.value ?? {};
+    if (!current.contains(packageName)) {
+      final updated = {...current, packageName};
+      await prefs.setStringList(_key, updated.toList());
+      state = AsyncData(updated);
+    } else {
+      // Just refresh the appsProvider to update positions
+      ref.invalidate(appsProvider);
+    }
+  }
 }
 
 final homeAppsProvider = AsyncNotifierProvider<HomeAppsNotifier, Set<String>>(() {
@@ -164,11 +182,171 @@ final wallpaperProvider = AsyncNotifierProvider<WallpaperNotifier, String?>(() {
   return WallpaperNotifier();
 });
 
+/// Provider for widget positions (clock, quote, etc.)
+class WidgetPositionNotifier extends AsyncNotifier<Map<String, Offset>> {
+  static const _keyPrefix = 'widget_pos_';
+
+  @override
+  Future<Map<String, Offset>> build() async {
+    final prefs = await SharedPreferences.getInstance();
+    final keys = prefs.getKeys().where((k) => k.startsWith(_keyPrefix));
+    final Map<String, Offset> positions = {};
+    for (var key in keys) {
+      final widgetId = key.replaceFirst(_keyPrefix, '').split('_').first;
+      final x = prefs.getDouble('${_keyPrefix}${widgetId}_x') ?? 0.0;
+      final y = prefs.getDouble('${_keyPrefix}${widgetId}_y') ?? 0.0;
+      positions[widgetId] = Offset(x, y);
+    }
+    return positions;
+  }
+
+  Future<void> updatePosition(String widgetId, Offset offset) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setDouble('${_keyPrefix}${widgetId}_x', offset.dx);
+    await prefs.setDouble('${_keyPrefix}${widgetId}_y', offset.dy);
+    
+    final current = state.value ?? {};
+    final updated = Map<String, Offset>.from(current)..[widgetId] = offset;
+    state = AsyncData(updated);
+  }
+}
+
+final widgetPositionProvider = AsyncNotifierProvider<WidgetPositionNotifier, Map<String, Offset>>(() {
+  return WidgetPositionNotifier();
+});
+
+/// Model for widgets placed on the home screen
+class HomeWidget {
+  final String id;
+  final String packageName;
+  final double x;
+  final double y;
+  final String? imagePath;
+
+  HomeWidget({
+    required this.id,
+    required this.packageName,
+    this.x = 0,
+    this.y = 0,
+    this.imagePath,
+  });
+
+  Map<String, dynamic> toMap() {
+    return {
+      'id': id,
+      'packageName': packageName,
+      'x': x,
+      'y': y,
+      'imagePath': imagePath,
+    };
+  }
+
+  factory HomeWidget.fromMap(Map<String, dynamic> map) {
+    return HomeWidget(
+      id: map['id'] as String,
+      packageName: map['packageName'] as String,
+      x: (map['x'] as num).toDouble(),
+      y: (map['y'] as num).toDouble(),
+      imagePath: map['imagePath'] as String?,
+    );
+  }
+
+  HomeWidget copyWith({double? x, double? y, String? imagePath}) {
+    return HomeWidget(
+      id: id,
+      packageName: packageName,
+      x: x ?? this.x,
+      y: y ?? this.y,
+      imagePath: imagePath ?? this.imagePath,
+    );
+  }
+}
+
+/// Provider for dynamic app widgets on the home screen
+class HomeWidgetsNotifier extends AsyncNotifier<List<HomeWidget>> {
+  static const _key = 'home_widgets_data';
+
+  @override
+  Future<List<HomeWidget>> build() async {
+    final prefs = await SharedPreferences.getInstance();
+    final List<String> data = prefs.getStringList(_key) ?? [];
+    return data.map((item) => HomeWidget.fromMap(jsonDecode(item))).toList();
+  }
+
+  Future<void> addWidget(String packageName, double x, double y, {String? imagePath}) async {
+    final prefs = await SharedPreferences.getInstance();
+    final current = state.value ?? [];
+    final newWidget = HomeWidget(
+      id: DateTime.now().millisecondsSinceEpoch.toString(),
+      packageName: packageName,
+      x: x,
+      y: y,
+      imagePath: imagePath,
+    );
+    final updated = [...current, newWidget];
+    await prefs.setStringList(_key, updated.map((w) => jsonEncode(w.toMap())).toList());
+    state = AsyncData(updated);
+  }
+
+  Future<void> updatePosition(String id, double x, double y) async {
+    final prefs = await SharedPreferences.getInstance();
+    final current = state.value ?? [];
+    final updated = current.map((w) {
+      if (w.id == id) {
+        return w.copyWith(x: x, y: y);
+      }
+      return w;
+    }).toList();
+    await prefs.setStringList(_key, updated.map((w) => jsonEncode(w.toMap())).toList());
+    state = AsyncData(updated);
+  }
+
+  Future<void> removeWidget(String id) async {
+    final prefs = await SharedPreferences.getInstance();
+    final current = state.value ?? [];
+    final updated = current.where((w) => w.id != id).toList();
+    await prefs.setStringList(_key, updated.map((w) => jsonEncode(w.toMap())).toList());
+    state = AsyncData(updated);
+  }
+}
+
+final homeWidgetsProvider = AsyncNotifierProvider<HomeWidgetsNotifier, List<HomeWidget>>(() {
+  return HomeWidgetsNotifier();
+});
+
 /// Cache for processed app icons to avoid lag in build()
 final processedIconProvider = FutureProvider.family<Uint8List, Uint8List>((ref, originalBytes) async {
   // Use compute or similar for heavy processing in a real app, 
   // but provider caching already helps significantly by only running once.
   return removeWhiteBackground(originalBytes);
+});
+
+/// Provider for heart animation setting
+class HeartAnimationNotifier extends AsyncNotifier<bool> {
+  static const _key = 'show_heart_animation';
+
+  @override
+  Future<bool> build() async {
+    final prefs = await SharedPreferences.getInstance();
+    return prefs.getBool(_key) ?? true; // Default to true
+  }
+
+  Future<void> toggle() async {
+    final prefs = await SharedPreferences.getInstance();
+    final newValue = !(state.value ?? true);
+    await prefs.setBool(_key, newValue);
+    state = AsyncData(newValue);
+  }
+
+  Future<void> setEnabled(bool enabled) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setBool(_key, enabled);
+    state = AsyncData(enabled);
+  }
+}
+
+final heartAnimationProvider = AsyncNotifierProvider<HeartAnimationNotifier, bool>(() {
+  return HeartAnimationNotifier();
 });
 
 

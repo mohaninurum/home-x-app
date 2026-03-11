@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'dart:math';
 import '../theme_provider.dart';
+import '../providers.dart';
 
 class FloatingHeartParticle {
   double x;
@@ -92,31 +93,40 @@ class _AnimatedHeartsBackgroundState extends ConsumerState<AnimatedHeartsBackgro
   Widget build(BuildContext context) {
     final theme = ref.watch(themeMoodProvider);
     final screenSize = MediaQuery.of(context).size;
+    final wallpaperPath = ref.watch(wallpaperProvider).value;
+    final showHearts = ref.watch(heartAnimationProvider).value ?? true;
 
     return Container(
+      width: double.infinity,
+      height: double.infinity,
       decoration: BoxDecoration(
-        gradient: LinearGradient(
-          begin: Alignment.topCenter,
-          end: Alignment.bottomCenter,
-          colors: theme.backgroundGradients.length >= 2
-              ? theme.backgroundGradients
-              : [theme.backgroundColor, theme.backgroundColor],
-        ),
+        gradient: wallpaperPath != null
+            ? null
+            : LinearGradient(
+                begin: Alignment.topCenter,
+                end: Alignment.bottomCenter,
+                colors: theme.backgroundGradients.length >= 2
+                    ? theme.backgroundGradients
+                    : [theme.backgroundColor, theme.backgroundColor],
+              ),
+        color: wallpaperPath != null ? Colors.transparent : theme.backgroundColor,
       ),
-      child: AnimatedBuilder(
-        animation: _controller,
-        builder: (context, _) {
-          _updateParticles(screenSize);
-          return CustomPaint(
-            painter: HeartsPainter(
-              List.from(_particles), // snapshot to avoid mutation during paint
-              theme.primaryColor,
-              theme.secondaryColor,
-            ),
-            size: Size.infinite,
-          );
-        },
-      ),
+      child: showHearts
+          ? AnimatedBuilder(
+              animation: _controller,
+              builder: (context, _) {
+                _updateParticles(screenSize);
+                return CustomPaint(
+                  painter: HeartsPainter(
+                    List.from(_particles), // snapshot to avoid mutation during paint
+                    theme.primaryColor,
+                    theme.secondaryColor,
+                  ),
+                  size: Size.infinite,
+                );
+              },
+            )
+          : const SizedBox.shrink(),
     );
   }
 }
