@@ -284,7 +284,15 @@ class StyledAppIconTwo extends StatelessWidget {
 
 class FloatingAppIcon extends ConsumerStatefulWidget {
   final AppInfo app;
-  const FloatingAppIcon({super.key, required this.app});
+  final bool isFloating;
+  final VoidCallback? onLongPress;
+
+  const FloatingAppIcon({
+    super.key,
+    required this.app,
+    this.isFloating = true,
+    this.onLongPress,
+  });
 
   @override
   ConsumerState<FloatingAppIcon> createState() => _FloatingAppIconState();
@@ -309,13 +317,15 @@ class _FloatingAppIconState extends ConsumerState<FloatingAppIcon> {
 
   @override
   Widget build(BuildContext context) {
-    final theme = ref.watch(themeMoodProvider);
-    final iconStyle = ref.watch(iconStyleProvider).value ?? AppIconStyle.box;
-    final iconBytes = removeWhiteBackground(widget.app.iconBytes);
-
-    Widget iconWidget = iconStyle == AppIconStyle.box
-        ? StyledAppIcon(app: widget.app, theme: theme, iconBytes: iconBytes)
-        : StyledAppIconTwo(app: widget.app, theme: theme, iconBytes: iconBytes);
+    if (!widget.isFloating) {
+      return GestureDetector(
+        onTap: () {
+          ref.read(nativeAppServiceProvider).launchApp(widget.app.packageName);
+        },
+        onLongPress: widget.onLongPress,
+        child: AppIconContent(app: widget.app),
+      );
+    }
 
     return Positioned(
       left: xPos,
@@ -325,6 +335,11 @@ class _FloatingAppIconState extends ConsumerState<FloatingAppIcon> {
           ref.read(nativeAppServiceProvider).launchApp(widget.app.packageName);
         },
         onLongPress: () {
+          if (widget.onLongPress != null) {
+            widget.onLongPress!();
+            return;
+          }
+          final theme = ref.read(themeMoodProvider);
           showModalBottomSheet(
             context: context,
             backgroundColor: theme.backgroundColor,
@@ -360,20 +375,35 @@ class _FloatingAppIconState extends ConsumerState<FloatingAppIcon> {
         child: Draggable(
           feedback: Material(
             color: Colors.transparent,
-            child: Opacity(opacity: 0.7, child: iconWidget),
+            child: Opacity(opacity: 0.7, child: AppIconContent(app: widget.app)),
           ),
           childWhenDragging: const SizedBox.shrink(),
           onDragEnd: (details) {
-            // Adjust offset to avoid status bar / navbar jumps
             setState(() {
               xPos = details.offset.dx;
               yPos = details.offset.dy;
             });
             _savePosition(xPos, yPos);
           },
-          child: iconWidget,
+          child: AppIconContent(app: widget.app),
         ),
       ),
     );
+  }
+}
+
+class AppIconContent extends ConsumerWidget {
+  final AppInfo app;
+  const AppIconContent({super.key, required this.app});
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final theme = ref.watch(themeMoodProvider);
+    final iconStyle = ref.watch(iconStyleProvider).value ?? AppIconStyle.box;
+    final iconBytes = removeWhiteBackground(app.iconBytes);
+
+    return iconStyle == AppIconStyle.box
+        ? StyledAppIcon(app: app, theme: theme, iconBytes: iconBytes)
+        : StyledAppIconTwo(app: app, theme: theme, iconBytes: iconBytes);
   }
 }
