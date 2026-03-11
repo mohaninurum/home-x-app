@@ -3,6 +3,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../../domain/app_info.dart';
 import '../providers.dart';
+import 'dart:typed_data';
+import 'package:image/image.dart' as img;
 
 class FloatingAppIcon extends ConsumerStatefulWidget {
   final AppInfo app;
@@ -29,6 +31,32 @@ class _FloatingAppIconState extends ConsumerState<FloatingAppIcon> {
     await prefs.setDouble('${widget.app.packageName}_y', y);
   }
 
+
+
+
+  Uint8List removeWhiteBackground(Uint8List bytes) {
+    final image = img.decodeImage(bytes);
+    if (image == null) return bytes;
+
+    for (int y = 0; y < image.height; y++) {
+      for (int x = 0; x < image.width; x++) {
+        final pixel = image.getPixel(x, y);
+
+        int r = pixel.r.toInt();
+        int g = pixel.g.toInt();
+        int b = pixel.b.toInt();
+
+        // white background detect
+        if (r > 240 && g > 240 && b > 240) {
+          image.setPixelRgba(x, y, 255, 255, 255, 0);
+        }
+      }
+    }
+
+    return Uint8List.fromList(img.encodePng(image));
+  }
+
+
   @override
   Widget build(BuildContext context) {
     Widget iconWidget = Column(
@@ -47,7 +75,7 @@ class _FloatingAppIconState extends ConsumerState<FloatingAppIcon> {
               )
             ],
             image: DecorationImage(
-              image: MemoryImage(widget.app.iconBytes),
+              image: MemoryImage(removeWhiteBackground(widget.app.iconBytes) ),
               fit: BoxFit.cover,
             ),
           ),
