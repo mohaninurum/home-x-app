@@ -260,6 +260,41 @@ class SettingsScreen extends ConsumerWidget {
             ),
           ),
 
+          const SizedBox(height: 12),
+
+          // Heart Animation Toggle
+          Container(
+            decoration: BoxDecoration(
+              color: theme.primaryColor.withOpacity(0.05),
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(color: theme.primaryColor.withOpacity(0.2)),
+            ),
+            child: Consumer(
+              builder: (context, ref, _) {
+                final showHearts = ref.watch(heartAnimationProvider).value ?? true;
+                return SwitchListTile(
+                  secondary: Icon(Icons.favorite, color: theme.primaryColor),
+                  title: Text(
+                    'Heart Animation',
+                    style: TextStyle(color: theme.primaryColor),
+                  ),
+                  subtitle: Text(
+                    'Show floating hearts on Home Screen',
+                    style: TextStyle(
+                      color: theme.primaryColor.withOpacity(0.7),
+                      fontSize: 12,
+                    ),
+                  ),
+                  value: showHearts,
+                  activeColor: theme.secondaryColor,
+                  onChanged: (value) {
+                    ref.read(heartAnimationProvider.notifier).setEnabled(value);
+                  },
+                );
+              },
+            ),
+          ),
+
           // Future settings placeholders can go here
           Text(
             'ABOUT',

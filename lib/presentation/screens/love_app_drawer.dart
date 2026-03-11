@@ -7,6 +7,7 @@ import '../widgets/floating_app_icon.dart';
 import '../widgets/animated_hearts_background.dart';
 import '../widgets/gesture_drawing_detector.dart';
 import '../../core/mood_theme.dart';
+import '../../domain/app_info.dart';
 
 class LoveAppDrawer extends ConsumerWidget {
   const LoveAppDrawer({super.key});
@@ -42,7 +43,9 @@ class LoveAppDrawer extends ConsumerWidget {
               child: Container(color: Colors.black45),
             ),
           if (wallpaperPath == null)
-            const GestureDrawingDetector(child: AnimatedHeartsBackground()),
+            const Positioned.fill(
+              child: GestureDrawingDetector(child: AnimatedHeartsBackground()),
+            ),
           appsAsync.when(
         data: (apps) {
           if (apps.isEmpty) {
@@ -66,42 +69,63 @@ class LoveAppDrawer extends ConsumerWidget {
               final app = apps[index];
               final isOnHome = homeApps.contains(app.packageName);
 
-              return InkWell(
-                onTap: () {
-                  nativeService.launchApp(app.packageName);
-                },
-                onLongPress: () {
-                  ref
-                      .read(homeAppsProvider.notifier)
-                      .toggleApp(app.packageName);
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(
-                      content: Text(
-                        isOnHome ? 'Removed from Home' : 'Added to Home',
-                      ),
-                      backgroundColor: theme.primaryColor,
-                      duration: const Duration(seconds: 1),
+              return LongPressDraggable<AppInfo>(
+                data: app,
+                feedback: Material(
+                  color: Colors.transparent,
+                  child: Opacity(
+                    opacity: 0.7,
+                    child: SizedBox(
+                      width: 80,
+                      height: 80,
+                      child: AppIconContent(app: app),
                     ),
-                  );
+                  ),
+                ),
+                childWhenDragging: Opacity(
+                  opacity: 0.3,
+                  child: AppIconContent(app: app),
+                ),
+                onDragStarted: () {
+                  // Optional: Hide drawer or notify home screen
                 },
-                child: Stack(
-                  alignment: Alignment.center,
-                  children: [
-                    AppIconContent(app: app),
-                    if (isOnHome)
-                      Positioned(
-                        top: 0,
-                        right: 0,
-                        child: Icon(
-                          Icons.favorite,
-                          color: theme.secondaryColor,
-                          size: 16,
-                          shadows: [
-                            Shadow(color: theme.backgroundColor, blurRadius: 4),
-                          ],
+                child: InkWell(
+                  onTap: () {
+                    nativeService.launchApp(app.packageName);
+                  },
+                  onLongPress: () {
+                    ref
+                        .read(homeAppsProvider.notifier)
+                        .toggleApp(app.packageName);
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(
+                        content: Text(
+                          isOnHome ? 'Removed from Home' : 'Added to Home',
                         ),
+                        backgroundColor: theme.primaryColor,
+                        duration: const Duration(seconds: 1),
                       ),
-                  ],
+                    );
+                  },
+                  child: Stack(
+                    alignment: Alignment.center,
+                    children: [
+                      AppIconContent(app: app),
+                      if (isOnHome)
+                        Positioned(
+                          top: 0,
+                          right: 0,
+                          child: Icon(
+                            Icons.favorite,
+                            color: theme.secondaryColor,
+                            size: 16,
+                            shadows: [
+                              Shadow(color: theme.backgroundColor, blurRadius: 4),
+                            ],
+                          ),
+                        ),
+                    ],
+                  ),
                 ),
               );
             },
