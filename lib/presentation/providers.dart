@@ -2,9 +2,32 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../domain/app_info.dart';
 import '../data/native_app_service.dart';
+import '../core/mood_theme.dart';
 
 final nativeAppServiceProvider = Provider<NativeAppService>((ref) {
   return NativeAppService();
+});
+
+/// Provider for app icon style settings
+class IconStyleNotifier extends AsyncNotifier<AppIconStyle> {
+  static const _key = 'app_icon_style';
+
+  @override
+  Future<AppIconStyle> build() async {
+    final prefs = await SharedPreferences.getInstance();
+    final index = prefs.getInt(_key) ?? 0; // Default to box (0)
+    return AppIconStyle.values[index];
+  }
+
+  Future<void> setStyle(AppIconStyle style) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setInt(_key, style.index);
+    state = AsyncData(style);
+  }
+}
+
+final iconStyleProvider = AsyncNotifierProvider<IconStyleNotifier, AppIconStyle>(() {
+  return IconStyleNotifier();
 });
 
 final appsProvider = FutureProvider<List<AppInfo>>((ref) async {
@@ -68,4 +91,32 @@ final homeAppsListProvider = FutureProvider<List<AppInfo>>((ref) async {
   
   return allApps.where((app) => homePackageNames.contains(app.packageName)).toList();
 });
+
+/// Provider for the custom wallpaper image path
+class WallpaperNotifier extends AsyncNotifier<String?> {
+  static const _key = 'wallpaper_path';
+
+  @override
+  Future<String?> build() async {
+    final prefs = await SharedPreferences.getInstance();
+    return prefs.getString(_key);
+  }
+
+  Future<void> setWallpaper(String path) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString(_key, path);
+    state = AsyncData(path);
+  }
+
+  Future<void> clearWallpaper() async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.remove(_key);
+    state = const AsyncData(null);
+  }
+}
+
+final wallpaperProvider = AsyncNotifierProvider<WallpaperNotifier, String?>(() {
+  return WallpaperNotifier();
+});
+
 

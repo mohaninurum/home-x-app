@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 
 enum AppMood { romantic, passion, cute, nightLove, hologram }
 
+enum AppIconStyle { box, circle }
+
 class MoodTheme {
   final AppMood mood;
   final String title;

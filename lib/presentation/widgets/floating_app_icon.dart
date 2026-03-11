@@ -64,6 +64,137 @@ class StyledAppIcon extends StatelessWidget {
           width: 64,
           height: 64,
           decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(16),
+            gradient: LinearGradient(
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+              colors: [
+                theme.primaryColor.withOpacity(0.6),
+                theme.backgroundColor,
+                theme.secondaryColor.withOpacity(0.2),
+              ],
+            ),
+            boxShadow: [
+              // Outer Glow (Hologram style)
+              BoxShadow(
+                color: theme.iconHighlightColor.withOpacity(
+                  0.5 * (theme.mood == AppMood.hologram ? pulseValue : 1.0),
+                ),
+                blurRadius: glowBlur,
+                spreadRadius: glowSpread,
+              ),
+              // Ambient 3D Drop shadow
+              BoxShadow(
+                color: Colors.black.withOpacity(0.5),
+                offset: const Offset(6, 10),
+                blurRadius: 15,
+              ),
+              // Sharp ground contact shadow
+              BoxShadow(
+                color: Colors.black.withOpacity(0.4),
+                offset: const Offset(2, 3),
+                blurRadius: 4,
+              ),
+              // Top-left outer rim highlight
+              BoxShadow(
+                color: Colors.white.withOpacity(0.6),
+                offset: const Offset(-2, -2),
+                blurRadius: 4,
+              ),
+            ],
+            border: Border.all(
+              color: theme.mood == AppMood.hologram
+                  ? theme.primaryColor.withOpacity(0.8)
+                  : Colors.white.withOpacity(0.5),
+              width: 1.5,
+            ),
+          ),
+          child: Container(
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(14),
+              gradient: LinearGradient(
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+                colors: [
+                  Colors.white.withOpacity(0.5),
+                  Colors.white.withOpacity(0.0),
+                  Colors.black.withOpacity(0.1),
+                  Colors.black.withOpacity(0.4),
+                ],
+                stops: const [0.0, 0.3, 0.7, 1.0],
+              ),
+            ),
+            padding: const EdgeInsets.all(12),
+            child: Image.memory(
+              iconBytes,
+              fit: BoxFit.contain,
+              filterQuality: FilterQuality.high,
+            ),
+          ),
+        ),
+        const SizedBox(height: 8),
+        Container(
+          padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 2),
+          decoration: theme.mood == AppMood.hologram
+              ? BoxDecoration(
+                  color: Colors.black26,
+                  borderRadius: BorderRadius.circular(4),
+                  border: Border.all(
+                    color: theme.primaryColor.withOpacity(0.3),
+                    width: 0.5,
+                  ),
+                )
+              : null,
+          child: Text(
+            app.label,
+            style: TextStyle(
+              color: theme.mood == AppMood.hologram
+                  ? theme.primaryColor
+                  : Colors.black87,
+              fontSize: 10,
+              fontWeight: FontWeight.bold,
+              shadows: [
+                Shadow(color: theme.backgroundColor, blurRadius: 2),
+                if (theme.mood == AppMood.hologram)
+                  Shadow(
+                    color: theme.primaryColor.withOpacity(0.5),
+                    blurRadius: 8,
+                  ),
+              ],
+            ),
+            overflow: TextOverflow.ellipsis,
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+class StyledAppIconTwo extends StatelessWidget {
+  final AppInfo app;
+  final MoodTheme theme;
+  final Uint8List iconBytes;
+
+  const StyledAppIconTwo({
+    super.key,
+    required this.app,
+    required this.theme,
+    required this.iconBytes,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    const double pulseValue = 1.0;
+    final double glowSpread = theme.mood == AppMood.hologram ? 4.0 : 1.0;
+    final double glowBlur = theme.mood == AppMood.hologram ? 20.0 : 10.0;
+
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Container(
+          width: 64,
+          height: 64,
+          decoration: BoxDecoration(
             shape: BoxShape.circle,
             gradient: LinearGradient(
               begin: Alignment.topLeft,
@@ -76,7 +207,9 @@ class StyledAppIcon extends StatelessWidget {
             boxShadow: [
               // Outer Glow (Hologram style)
               BoxShadow(
-                color: theme.iconHighlightColor.withOpacity(0.5 * (theme.mood == AppMood.hologram ? pulseValue : 1.0)),
+                color: theme.iconHighlightColor.withOpacity(
+                  0.5 * (theme.mood == AppMood.hologram ? pulseValue : 1.0),
+                ),
                 blurRadius: glowBlur,
                 spreadRadius: glowSpread,
               ),
@@ -94,7 +227,7 @@ class StyledAppIcon extends StatelessWidget {
               ),
             ],
             border: Border.all(
-              color: theme.mood == AppMood.hologram 
+              color: theme.mood == AppMood.hologram
                   ? theme.primaryColor.withOpacity(0.8)
                   : Colors.white.withOpacity(0.3),
               width: 1.5,
@@ -114,21 +247,31 @@ class StyledAppIcon extends StatelessWidget {
         const SizedBox(height: 8),
         Container(
           padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 2),
-          decoration: theme.mood == AppMood.hologram ? BoxDecoration(
-            color: Colors.black26,
-            borderRadius: BorderRadius.circular(4),
-            border: Border.all(color: theme.primaryColor.withOpacity(0.3), width: 0.5),
-          ) : null,
+          decoration: theme.mood == AppMood.hologram
+              ? BoxDecoration(
+                  color: Colors.black26,
+                  borderRadius: BorderRadius.circular(4),
+                  border: Border.all(
+                    color: theme.primaryColor.withOpacity(0.3),
+                    width: 0.5,
+                  ),
+                )
+              : null,
           child: Text(
             app.label,
             style: TextStyle(
-              color: theme.mood == AppMood.hologram ? theme.primaryColor : Colors.black87,
+              color: theme.mood == AppMood.hologram
+                  ? theme.primaryColor
+                  : Colors.black87,
               fontSize: 10,
               fontWeight: FontWeight.bold,
               shadows: [
                 Shadow(color: theme.backgroundColor, blurRadius: 2),
                 if (theme.mood == AppMood.hologram)
-                  Shadow(color: theme.primaryColor.withOpacity(0.5), blurRadius: 8),
+                  Shadow(
+                    color: theme.primaryColor.withOpacity(0.5),
+                    blurRadius: 8,
+                  ),
               ],
             ),
             overflow: TextOverflow.ellipsis,
@@ -167,13 +310,12 @@ class _FloatingAppIconState extends ConsumerState<FloatingAppIcon> {
   @override
   Widget build(BuildContext context) {
     final theme = ref.watch(themeMoodProvider);
+    final iconStyle = ref.watch(iconStyleProvider).value ?? AppIconStyle.box;
     final iconBytes = removeWhiteBackground(widget.app.iconBytes);
-    
-    Widget iconWidget = StyledAppIcon(
-      app: widget.app,
-      theme: theme,
-      iconBytes: iconBytes,
-    );
+
+    Widget iconWidget = iconStyle == AppIconStyle.box
+        ? StyledAppIcon(app: widget.app, theme: theme, iconBytes: iconBytes)
+        : StyledAppIconTwo(app: widget.app, theme: theme, iconBytes: iconBytes);
 
     return Positioned(
       left: xPos,
@@ -195,13 +337,18 @@ class _FloatingAppIconState extends ConsumerState<FloatingAppIcon> {
                 mainAxisSize: MainAxisSize.min,
                 children: [
                   ListTile(
-                    leading: Icon(Icons.delete_outline, color: theme.primaryColor),
+                    leading: Icon(
+                      Icons.delete_outline,
+                      color: theme.primaryColor,
+                    ),
                     title: Text(
                       "Remove from Home",
                       style: TextStyle(color: theme.primaryColor),
                     ),
                     onTap: () {
-                      ref.read(homeAppsProvider.notifier).removeApp(widget.app.packageName);
+                      ref
+                          .read(homeAppsProvider.notifier)
+                          .removeApp(widget.app.packageName);
                       Navigator.pop(context);
                     },
                   ),

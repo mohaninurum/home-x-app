@@ -1,7 +1,10 @@
+import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../providers.dart';
 import '../theme_provider.dart';
+import '../widgets/floating_app_icon.dart';
+import '../../core/mood_theme.dart';
 
 class LoveAppDrawer extends ConsumerWidget {
   const LoveAppDrawer({super.key});
@@ -10,44 +13,68 @@ class LoveAppDrawer extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final appsAsync = ref.watch(appsProvider);
     final theme = ref.watch(themeMoodProvider);
+    final iconStyle = ref.watch(iconStyleProvider).value ?? AppIconStyle.box;
     final homeApps = ref.watch(homeAppsProvider).value ?? {};
     final nativeService = ref.read(nativeAppServiceProvider);
+    final wallpaperPath = ref.watch(wallpaperProvider).value;
 
     return Scaffold(
-      backgroundColor: theme.backgroundColor,
+      backgroundColor: wallpaperPath != null ? Colors.transparent : theme.backgroundColor,
       appBar: AppBar(
         title: const Text('Apps', style: TextStyle(color: Colors.white)),
-        backgroundColor: theme.primaryColor,
+        backgroundColor: wallpaperPath != null ? Colors.black54 : theme.primaryColor,
         elevation: 0,
         iconTheme: const IconThemeData(color: Colors.white),
       ),
-      body: appsAsync.when(
+      body: Stack(
+        children: [
+          if (wallpaperPath != null)
+            Positioned.fill(
+              child: Image.file(
+                File(wallpaperPath),
+                fit: BoxFit.cover,
+              ),
+            ),
+          if (wallpaperPath != null)
+            Positioned.fill(
+              child: Container(color: Colors.black45),
+            ),
+          appsAsync.when(
         data: (apps) {
           if (apps.isEmpty) {
-            return const Center(child: Text("No apps found", style: TextStyle(color: Colors.black54)));
+            return const Center(
+              child: Text(
+                "No apps found",
+                style: TextStyle(color: Colors.black54),
+              ),
+            );
           }
-          
+
           return GridView.builder(
-            padding: const EdgeInsets.all(20),
+            padding: const EdgeInsets.all(10),
             gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
               crossAxisCount: 4,
-              crossAxisSpacing: 16,
-              mainAxisSpacing: 16,
+              crossAxisSpacing: 10,
+              mainAxisSpacing: 10,
             ),
             itemCount: apps.length,
             itemBuilder: (context, index) {
               final app = apps[index];
               final isOnHome = homeApps.contains(app.packageName);
-              
+
               return InkWell(
                 onTap: () {
                   nativeService.launchApp(app.packageName);
                 },
                 onLongPress: () {
-                  ref.read(homeAppsProvider.notifier).toggleApp(app.packageName);
+                  ref
+                      .read(homeAppsProvider.notifier)
+                      .toggleApp(app.packageName);
                   ScaffoldMessenger.of(context).showSnackBar(
                     SnackBar(
-                      content: Text(isOnHome ? 'Removed from Home' : 'Added to Home'),
+                      content: Text(
+                        isOnHome ? 'Removed from Home' : 'Added to Home',
+                      ),
                       backgroundColor: theme.primaryColor,
                       duration: const Duration(seconds: 1),
                     ),
@@ -56,25 +83,17 @@ class LoveAppDrawer extends ConsumerWidget {
                 child: Stack(
                   alignment: Alignment.center,
                   children: [
-                    Column(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        ClipPath(
-                          clipper: DrawerHeartClipper(),
-                          child: Container(
-                            padding: const EdgeInsets.all(4),
-                            color: theme.primaryColor.withOpacity(0.2),
-                            child: Image.memory(app.iconBytes, width: 48, height: 48, fit: BoxFit.cover),
+                    iconStyle == AppIconStyle.box
+                        ? StyledAppIcon(
+                            app: app,
+                            theme: theme,
+                            iconBytes: removeWhiteBackground(app.iconBytes),
+                          )
+                        : StyledAppIconTwo(
+                            app: app,
+                            theme: theme,
+                            iconBytes: removeWhiteBackground(app.iconBytes),
                           ),
-                        ),
-                        const SizedBox(height: 4),
-                        Text(
-                          app.label,
-                          style: TextStyle(color: theme.primaryColor, fontSize: 10, fontWeight: FontWeight.bold),
-                          overflow: TextOverflow.ellipsis,
-                        ),
-                      ],
-                    ),
                     if (isOnHome)
                       Positioned(
                         top: 0,
@@ -83,7 +102,9 @@ class LoveAppDrawer extends ConsumerWidget {
                           Icons.favorite,
                           color: theme.secondaryColor,
                           size: 16,
-                          shadows: [Shadow(color: theme.backgroundColor, blurRadius: 4)],
+                          shadows: [
+                            Shadow(color: theme.backgroundColor, blurRadius: 4),
+                          ],
                         ),
                       ),
                   ],
@@ -92,28 +113,11 @@ class LoveAppDrawer extends ConsumerWidget {
             },
           );
         },
-        loading: () => Center(child: CircularProgressIndicator(color: theme.primaryColor)),
+        loading: () =>
+            Center(child: CircularProgressIndicator(color: theme.primaryColor)),
         error: (err, stack) => Center(child: Text('Error: $err')),
       ),
+    ]),
     );
-  }
-}
-
-class DrawerHeartClipper extends CustomClipper<Path> {
-  @override
-  Path getClip(Size size) {
-    double width = size.width;
-    double height = size.height;
-    Path path = Path();
-    path.moveTo(0.5 * width, height * 0.35);
-    path.cubicTo(0.2 * width, height * 0.1, -0.25 * width, height * 0.6, 0.5 * width, height);
-    path.moveTo(0.5 * width, height * 0.35);
-    path.cubicTo(0.8 * width, height * 0.1, 1.25 * width, height * 0.6, 0.5 * width, height);
-    return path;
-  }
-
-  @override
-  bool shouldReclip(CustomClipper<Path> oldClipper) {
-    return false;
   }
 }

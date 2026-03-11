@@ -1,3 +1,4 @@
+import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
@@ -19,6 +20,7 @@ class LockScreenApp extends StatelessWidget {
   }
 }
 
+// ─── Main Lock Screen ────────────────────────────────────────────────────────
 class LoveLockScreen extends StatefulWidget {
   const LoveLockScreen({super.key});
 
@@ -27,96 +29,111 @@ class LoveLockScreen extends StatefulWidget {
 }
 
 class _LoveLockScreenState extends State<LoveLockScreen> {
-  static const MethodChannel _channel = MethodChannel('com.example.homexapp/lockscreen');
-  final List<int> _pattern = [];
-  final List<int> _correctPattern = [0, 1, 2, 5, 8]; // Example "L" shape pattern
+  static const MethodChannel _channel =
+      MethodChannel('com.example.homexapp/lockscreen');
 
-  void _onPatternComplete(List<int> drawnPattern) {
-    bool isMatch = true;
-    if (drawnPattern.length != _correctPattern.length) {
-      isMatch = false;
-    } else {
-      for (int i = 0; i < drawnPattern.length; i++) {
-        if (drawnPattern[i] != _correctPattern[i]) {
-          isMatch = false;
-          break;
-        }
-      }
-    }
+  // Pin-tap based unlock to sidestep touch bugs with pattern draw
+  final List<int> _correctPattern = [0, 1, 2, 5, 8];
 
-    if (isMatch) {
+  void _onPatternComplete(List<int> drawn) {
+    if (_listsEqual(drawn, _correctPattern)) {
       _unlockDevice();
     } else {
-      setState(() {
-        _pattern.clear();
-      });
       ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
-        content: Text("Incorrect Pattern. Try again! 💔", textAlign: TextAlign.center),
+        content: Text("Incorrect Pattern 💔", textAlign: TextAlign.center),
         backgroundColor: Colors.redAccent,
+        duration: Duration(seconds: 1),
       ));
     }
+  }
+
+  bool _listsEqual(List<int> a, List<int> b) {
+    if (a.length != b.length) return false;
+    for (int i = 0; i < a.length; i++) {
+      if (a[i] != b[i]) return false;
+    }
+    return true;
   }
 
   Future<void> _unlockDevice() async {
     try {
       await _channel.invokeMethod('unlock');
-    } catch (e) {
-      // Ignore
-    }
+    } catch (_) {}
   }
 
   @override
   Widget build(BuildContext context) {
+    final size = MediaQuery.of(context).size;
+
     return Scaffold(
-      backgroundColor: Colors.black, // A dark base, can be couple photo
+      backgroundColor: Colors.black,
       body: Stack(
         fit: StackFit.expand,
         children: [
-          // Background Placeholder (Could load image from SharedPreferences in full version)
-          ColorFiltered(
-            colorFilter: ColorFilter.mode(Colors.pink.withOpacity(0.3), BlendMode.srcOver),
-            child: Image.network(
-              "https://images.unsplash.com/photo-1518199266791-5375a83190b7?q=80&w=1000",
-              fit: BoxFit.cover,
-            ),
-          ),
-          
+          // ── Background: local deep gradient (no network call) ──────────
           Container(
-            decoration: BoxDecoration(
+            decoration: const BoxDecoration(
               gradient: LinearGradient(
-                begin: Alignment.topCenter,
-                end: Alignment.bottomCenter,
-                colors: [Colors.black54, Colors.transparent, Colors.black87],
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+                colors: [
+                  Color(0xFF0D0014),
+                  Color(0xFF1A0020),
+                  Color(0xFF2D0035),
+                  Color(0xFF1A000A),
+                ],
+                stops: [0.0, 0.35, 0.7, 1.0],
               ),
             ),
           ),
 
-          Column(
-            mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-            children: [
-              const SizedBox(height: 50),
-              // Greeting
-              const Text(
-                "❤️ Good Morning My Love",
-                style: TextStyle(
-                  color: Colors.white,
-                  fontSize: 28,
-                  fontWeight: FontWeight.w300,
-                  shadows: [Shadow(color: Colors.pink, blurRadius: 10)],
+          // Decorative circles for depth
+          Positioned(
+            top: -80,
+            right: -80,
+            child: _GlowCircle(size: 300, color: const Color(0xFFE91E63)),
+          ),
+          Positioned(
+            bottom: -60,
+            left: -60,
+            child: _GlowCircle(size: 240, color: const Color(0xFF9C27B0)),
+          ),
+
+          // ── Content ────────────────────────────────────────────────────
+          SafeArea(
+            child: Column(
+              children: [
+                const SizedBox(height: 40),
+
+                // Time display
+                _ClockWidget(),
+
+                const SizedBox(height: 8),
+
+                const Text(
+                  "❤️ Draw pattern to unlock",
+                  style: TextStyle(
+                    color: Colors.white70,
+                    fontSize: 16,
+                    fontWeight: FontWeight.w300,
+                    letterSpacing: 0.5,
+                  ),
                 ),
-              ),
-              const Spacer(),
-              
-              // Custom Heart Pattern Element
-              SizedBox(
-                height: 350,
-                width: 350,
-                child: HeartPatternLock(
-                  onPatternComplete: _onPatternComplete,
+
+                const Spacer(),
+
+                // Pattern grid
+                SizedBox(
+                  width: math.min(size.width * 0.8, 320),
+                  height: math.min(size.width * 0.8, 320),
+                  child: HeartPatternLock(
+                    onPatternComplete: _onPatternComplete,
+                  ),
                 ),
-              ),
-              const SizedBox(height: 50),
-            ],
+
+                const Spacer(),
+              ],
+            ),
           ),
         ],
       ),
@@ -124,10 +141,67 @@ class _LoveLockScreenState extends State<LoveLockScreen> {
   }
 }
 
-// Simple Pattern Lock implementation visually using Heart Icons
-class HeartPatternLock extends StatefulWidget {
-  final Function(List<int>) onPatternComplete;
+// ─── Simple Clock ────────────────────────────────────────────────────────────
+class _ClockWidget extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    final now = DateTime.now();
+    final hour = now.hour.toString().padLeft(2, '0');
+    final min  = now.minute.toString().padLeft(2, '0');
+    final days = ['Mon','Tue','Wed','Thu','Fri','Sat','Sun'];
+    final months = ['Jan','Feb','Mar','Apr','May','Jun',
+                    'Jul','Aug','Sep','Oct','Nov','Dec'];
+    final date = '${days[now.weekday - 1]}, ${months[now.month - 1]} ${now.day}';
 
+    return Column(
+      children: [
+        Text(
+          '$hour:$min',
+          style: const TextStyle(
+            color: Colors.white,
+            fontSize: 72,
+            fontWeight: FontWeight.w100,
+            letterSpacing: -2,
+          ),
+        ),
+        Text(
+          date,
+          style: const TextStyle(
+            color: Colors.white60,
+            fontSize: 16,
+            fontWeight: FontWeight.w300,
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+// ─── Glowing circle decoration ───────────────────────────────────────────────
+class _GlowCircle extends StatelessWidget {
+  final double size;
+  final Color color;
+  const _GlowCircle({required this.size, required this.color});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: size,
+      height: size,
+      decoration: BoxDecoration(
+        shape: BoxShape.circle,
+        gradient: RadialGradient(
+          colors: [color.withOpacity(0.35), Colors.transparent],
+        ),
+      ),
+    );
+  }
+}
+
+// ─── Pattern Lock Widget ──────────────────────────────────────────────────────
+// Uses a Stack + CustomPaint instead of GridView so pan gestures work correctly.
+class HeartPatternLock extends StatefulWidget {
+  final void Function(List<int>) onPatternComplete;
   const HeartPatternLock({super.key, required this.onPatternComplete});
 
   @override
@@ -135,71 +209,182 @@ class HeartPatternLock extends StatefulWidget {
 }
 
 class _HeartPatternLockState extends State<HeartPatternLock> {
-  final List<int> _selectedDots = [];
-  final GlobalKey _gridKey = GlobalKey();
-  
-  void _handlePan(Offset position) {
-    final RenderBox? renderBox = _gridKey.currentContext?.findRenderObject() as RenderBox?;
-    if (renderBox == null) return;
-    
-    // Simplistic hit testing
-    final double cellWidth = renderBox.size.width / 3;
-    final double cellHeight = renderBox.size.height / 3;
-    
-    int col = (position.dx / cellWidth).floor();
-    int row = (position.dy / cellHeight).floor();
-    
-    if (col >= 0 && col < 3 && row >= 0 && row < 3) {
-      int index = row * 3 + col;
-      if (!_selectedDots.contains(index)) {
-        setState(() {
-          _selectedDots.add(index);
-        });
+  final List<int> _selected = [];
+  Offset? _currentDrag;
+
+  // Hit test: which dot is at local offset?
+  int? _dotAt(Offset pos, Size size) {
+    final double cellW = size.width / 3;
+    final double cellH = size.height / 3;
+    for (int row = 0; row < 3; row++) {
+      for (int col = 0; col < 3; col++) {
+        final cx = (col + 0.5) * cellW;
+        final cy = (row + 0.5) * cellH;
+        final dist = (pos - Offset(cx, cy)).distance;
+        if (dist < cellW * 0.4) {
+          return row * 3 + col;
+        }
       }
+    }
+    return null;
+  }
+
+  void _onPanStart(DragStartDetails d, Size size) {
+    final idx = _dotAt(d.localPosition, size);
+    if (idx != null) {
+      setState(() {
+        _selected.clear();
+        _selected.add(idx);
+        _currentDrag = d.localPosition;
+      });
+    }
+  }
+
+  void _onPanUpdate(DragUpdateDetails d, Size size) {
+    final idx = _dotAt(d.localPosition, size);
+    setState(() {
+      _currentDrag = d.localPosition;
+      if (idx != null && !_selected.contains(idx)) {
+        _selected.add(idx);
+      }
+    });
+  }
+
+  void _onPanEnd(DragEndDetails d) {
+    final result = List<int>.from(_selected);
+    setState(() {
+      _selected.clear();
+      _currentDrag = null;
+    });
+    if (result.isNotEmpty) {
+      widget.onPatternComplete(result);
     }
   }
 
   @override
   Widget build(BuildContext context) {
-    return GestureDetector(
-      onPanStart: (details) => _handlePan(details.localPosition),
-      onPanUpdate: (details) => _handlePan(details.localPosition),
-      onPanEnd: (details) {
-        widget.onPatternComplete(List.from(_selectedDots));
-        setState(() {
-          _selectedDots.clear();
-        });
-      },
-      child: Container(
-        key: _gridKey,
-        padding: const EdgeInsets.all(20),
-        child: GridView.builder(
-          physics: const NeverScrollableScrollPhysics(),
-          gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-            crossAxisCount: 3,
-            crossAxisSpacing: 30,
-            mainAxisSpacing: 30,
+    return LayoutBuilder(builder: (ctx, constraints) {
+      final size = Size(constraints.maxWidth, constraints.maxHeight);
+
+      return GestureDetector(
+        behavior: HitTestBehavior.opaque,
+        onPanStart: (d) => _onPanStart(d, size),
+        onPanUpdate: (d) => _onPanUpdate(d, size),
+        onPanEnd: _onPanEnd,
+        child: CustomPaint(
+          painter: _PatternPainter(
+            selected: _selected,
+            dragPoint: _currentDrag,
+            size: size,
           ),
-          itemCount: 9,
-          itemBuilder: (context, index) {
-            bool isSelected = _selectedDots.contains(index);
-            return AnimatedContainer(
-              duration: const Duration(milliseconds: 200),
-              decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                color: isSelected ? Colors.pink.withOpacity(0.3) : Colors.transparent,
-                border: Border.all(
-                  color: isSelected ? Colors.pinkAccent : Colors.white54,
-                  width: isSelected ? 3 : 1,
-                )
-              ),
-              child: isSelected 
-                ? const Icon(Icons.favorite, color: Colors.pinkAccent, size: 24)
-                : const Icon(Icons.favorite_border, color: Colors.white54, size: 16),
-            );
-          },
+          child: _DotsGrid(selected: _selected, gridSize: size),
         ),
-      ),
+      );
+    });
+  }
+}
+
+// ── Dots drawn as a Stack of Positioned widgets ───────────────────────────────
+class _DotsGrid extends StatelessWidget {
+  final List<int> selected;
+  final Size gridSize;
+  const _DotsGrid({required this.selected, required this.gridSize});
+
+  @override
+  Widget build(BuildContext context) {
+    final double cellW = gridSize.width / 3;
+    final double cellH = gridSize.height / 3;
+    const double dotSize = 52;
+
+    return Stack(
+      children: List.generate(9, (idx) {
+        final row = idx ~/ 3;
+        final col = idx % 3;
+        final cx = (col + 0.5) * cellW;
+        final cy = (row + 0.5) * cellH;
+        final isOn = selected.contains(idx);
+
+        return Positioned(
+          left: cx - dotSize / 2,
+          top: cy - dotSize / 2,
+          child: AnimatedContainer(
+            duration: const Duration(milliseconds: 120),
+            width: dotSize,
+            height: dotSize,
+            decoration: BoxDecoration(
+              shape: BoxShape.circle,
+              color: isOn
+                  ? Colors.pink.withOpacity(0.25)
+                  : Colors.white.withOpacity(0.08),
+              border: Border.all(
+                color: isOn ? Colors.pinkAccent : Colors.white38,
+                width: isOn ? 2.5 : 1.5,
+              ),
+              boxShadow: isOn
+                  ? [
+                      BoxShadow(
+                        color: Colors.pinkAccent.withOpacity(0.5),
+                        blurRadius: 12,
+                        spreadRadius: 2,
+                      ),
+                    ]
+                  : [],
+            ),
+            child: Icon(
+              isOn ? Icons.favorite : Icons.favorite_border,
+              color: isOn ? Colors.pinkAccent : Colors.white38,
+              size: isOn ? 24 : 18,
+            ),
+          ),
+        );
+      }),
     );
   }
+}
+
+// ── Lines connecting drawn dots ───────────────────────────────────────────────
+class _PatternPainter extends CustomPainter {
+  final List<int> selected;
+  final Offset? dragPoint;
+  final Size size;
+
+  const _PatternPainter({
+    required this.selected,
+    required this.dragPoint,
+    required this.size,
+  });
+
+  Offset _center(int idx) {
+    final double cellW = size.width / 3;
+    final double cellH = size.height / 3;
+    final row = idx ~/ 3;
+    final col = idx % 3;
+    return Offset((col + 0.5) * cellW, (row + 0.5) * cellH);
+  }
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final paint = Paint()
+      ..color = Colors.pinkAccent.withOpacity(0.7)
+      ..strokeWidth = 2.5
+      ..strokeCap = StrokeCap.round
+      ..style = PaintingStyle.stroke;
+
+    for (int i = 0; i < selected.length - 1; i++) {
+      canvas.drawLine(_center(selected[i]), _center(selected[i + 1]), paint);
+    }
+
+    // Line from last dot to current finger position
+    if (selected.isNotEmpty && dragPoint != null) {
+      final lastPaint = Paint()
+        ..color = Colors.pinkAccent.withOpacity(0.35)
+        ..strokeWidth = 2.0
+        ..strokeCap = StrokeCap.round;
+      canvas.drawLine(_center(selected.last), dragPoint!, lastPaint);
+    }
+  }
+
+  @override
+  bool shouldRepaint(_PatternPainter old) =>
+      old.selected != selected || old.dragPoint != dragPoint;
 }

@@ -1,3 +1,4 @@
+import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../providers.dart';
@@ -37,11 +38,21 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
   @override
   Widget build(BuildContext context) {
     final appsAsyncValue = ref.watch(appsProvider);
+    final wallpaperPath = ref.watch(wallpaperProvider).value;
 
     return SafeArea(
       child: Scaffold(
         body: Stack(
           children: [
+            // 0. Custom Wallpaper (Base Layer)
+            if (wallpaperPath != null)
+              Positioned.fill(
+                child: Image.file(
+                  File(wallpaperPath),
+                  fit: BoxFit.cover,
+                ),
+              ),
+
             // 1. Dynamic Wallpaper with Drawing Support
             const GestureDrawingDetector(child: AnimatedHeartsBackground()),
 
