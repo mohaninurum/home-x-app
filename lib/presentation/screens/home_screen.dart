@@ -35,93 +35,95 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
   Widget build(BuildContext context) {
     final appsAsyncValue = ref.watch(appsProvider);
     
-    return Scaffold(
-      body: Stack(
-        children: [
-          // 1. Dynamic Wallpaper with Drawing Support
-          const GestureDrawingDetector(
-            child: AnimatedHeartsBackground(),
-          ),
+    return SafeArea(
+      child: Scaffold(
+        body: Stack(
+          children: [
+            // 1. Dynamic Wallpaper with Drawing Support
+            const GestureDrawingDetector(
+              child: AnimatedHeartsBackground(),
+            ),
 
-          // 2. Gesture Detector for Workspace Level Gestures
-          GestureDetector(
-            onLongPress: () {
-               showDialog(
-                 context: context, 
-                 builder: (context) => const ThemeSelectorDialog()
-               );
-            },
-            onHorizontalDragEnd: (details) {
-               if (details.primaryVelocity != null && details.primaryVelocity! > 0) {
-                 // Swipe Right -> Memory Timeline
-                 Navigator.push(context, MaterialPageRoute(builder: (context) => const MemoryTimelineScreen()));
-               }
-            },
-            onDoubleTap: () {
-               // Double Tap configures entry into hidden space
-               Navigator.push(context, MaterialPageRoute(builder: (context) => const HiddenAppsScreen()));
-            },
-            onVerticalDragEnd: (details) {
-               if (details.primaryVelocity != null) {
-                  if (details.primaryVelocity! < 0) {
-                    // Swipe Up -> Couple Mode
-                    Navigator.push(context, MaterialPageRoute(builder: (context) => const CoupleModeScreen()));
-                  } else if (details.primaryVelocity! > 1000) {
-                    // Fast Swipe Down -> Secret Gallery
-                    Navigator.push(context, MaterialPageRoute(builder: (context) => const SecretGalleryScreen()));
-                  } else if (details.primaryVelocity! > 0) {
-                    // Swipe Down -> Love App Drawer
-                    Navigator.push(context, MaterialPageRoute(builder: (context) => const LoveAppDrawer()));
-                  }
-               }
-            },
-            child: Container(color: Colors.transparent),
-          ),
-          
-          // 3. Floating Icons Layout
-          appsAsyncValue.when(
-            data: (apps) {
-              if (apps.isEmpty) {
-                return const Center(child: Text("No apps found or lack permission", style: TextStyle(color: Colors.white)));
-              }
-              return Stack(
-                fit: StackFit.expand,
-                children: [
-                  // Base Romantic Widgets
-                  const Positioned(
-                    top: 80,
-                    left: 20,
-                    right: 20,
-                    child: Center(child: RomanticClockWidget()),
-                  ),
-                  const Positioned(
-                    bottom: 120,
-                    left: 20,
-                    right: 20,
-                    child: Center(child: LoveQuoteWidget()),
-                  ),
-                  const Positioned(
-                    top: 250,
-                    left: 20,
-                    child: CoupleGoalsWidget(),
-                  ),
-                  const Positioned(
-                    top: 450,
-                    right: 20,
-                    child: LoveNotesWidget(),
-                  ),
-                  // Floating Draggable Apps
-                  ...apps.map((app) => FloatingAppIcon(app: app)),
+            // 2. Gesture Detector for Workspace Level Gestures
+            GestureDetector(
+              onLongPress: () {
+                 showDialog(
+                   context: context,
+                   builder: (context) => const ThemeSelectorDialog()
+                 );
+              },
+              onHorizontalDragEnd: (details) {
+                 if (details.primaryVelocity != null && details.primaryVelocity! > 0) {
+                   // Swipe Right -> Memory Timeline
+                   Navigator.push(context, MaterialPageRoute(builder: (context) => const MemoryTimelineScreen()));
+                 }
+              },
+              onDoubleTap: () {
+                 // Double Tap configures entry into hidden space
+                 Navigator.push(context, MaterialPageRoute(builder: (context) => const HiddenAppsScreen()));
+              },
+              onVerticalDragEnd: (details) {
+                 if (details.primaryVelocity != null) {
+                    if (details.primaryVelocity! < 0) {
+                      // Swipe Up -> Couple Mode
+                      Navigator.push(context, MaterialPageRoute(builder: (context) => const CoupleModeScreen()));
+                    } else if (details.primaryVelocity! > 1000) {
+                      // Fast Swipe Down -> Secret Gallery
+                      Navigator.push(context, MaterialPageRoute(builder: (context) => const SecretGalleryScreen()));
+                    } else if (details.primaryVelocity! > 0) {
+                      // Swipe Down -> Love App Drawer
+                      Navigator.push(context, MaterialPageRoute(builder: (context) => const LoveAppDrawer()));
+                    }
+                 }
+              },
+              child: Container(color: Colors.transparent),
+            ),
 
-                  // Top level notification visualizer
-                  const NotificationSimulationWidget(),
-                ],
-              );
-            },
-            loading: () => const Center(child: CircularProgressIndicator(color: Colors.white)),
-            error: (err, stack) => Center(child: Text('Error loading apps: $err', style: const TextStyle(color: Colors.white))),
-          ),
-        ],
+            // 3. Floating Icons Layout
+            appsAsyncValue.when(
+              data: (apps) {
+                if (apps.isEmpty) {
+                  return const Center(child: Text("No apps found or lack permission", style: TextStyle(color: Colors.white)));
+                }
+                return Stack(
+                  fit: StackFit.expand,
+                  children: [
+                    // Base Romantic Widgets
+                    const Positioned(
+                      top: 80,
+                      left: 20,
+                      right: 20,
+                      child: Center(child: RomanticClockWidget()),
+                    ),
+                    const Positioned(
+                      bottom: 120,
+                      left: 20,
+                      right: 20,
+                      child: Center(child: LoveQuoteWidget()),
+                    ),
+                    const Positioned(
+                      top: 250,
+                      left: 20,
+                      child: CoupleGoalsWidget(),
+                    ),
+                    const Positioned(
+                      top: 450,
+                      right: 20,
+                      child: LoveNotesWidget(),
+                    ),
+                    // Floating Draggable Apps
+                    ...apps.map((app) => FloatingAppIcon(app: app)),
+
+                    // Top level notification visualizer
+                    const NotificationSimulationWidget(),
+                  ],
+                );
+              },
+              loading: () => const Center(child: CircularProgressIndicator(color: Colors.white)),
+              error: (err, stack) => Center(child: Text('Error loading apps: $err', style: const TextStyle(color: Colors.white))),
+            ),
+          ],
+        ),
       ),
     );
   }
