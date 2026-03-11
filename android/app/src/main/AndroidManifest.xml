@@ -1,6 +1,9 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
     <uses-permission android:name="android.permission.QUERY_ALL_PACKAGES" />
     <uses-permission android:name="android.permission.WAKE_LOCK" />
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_DATA_SYNC" />
+    <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />
     <application
         android:label="Love Launcher"
         android:name="${applicationName}"
@@ -45,7 +48,10 @@
             android:configChanges="orientation|keyboardHidden|keyboard|screenSize|locale|layoutDirection|fontScale|screenLayout|density|uiMode"
             android:hardwareAccelerated="true" />
             
-        <service android:name=".lockscreen.LockScreenService" />
+        <service
+            android:name=".lockscreen.LockScreenService"
+            android:exported="false"
+            android:foregroundServiceType="dataSync" />
         <receiver android:name=".lockscreen.LockScreenReceiver" android:exported="true">
             <intent-filter>
                 <action android:name="android.intent.action.SCREEN_OFF" />

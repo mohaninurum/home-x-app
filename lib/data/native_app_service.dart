@@ -33,4 +33,15 @@ class NativeAppService {
       print("Failed to start lock service: $e");
     }
   }
+
+  Future<bool> openDefaultLauncherSettings() async {
+    try {
+      final bool result = await _channel.invokeMethod('openDefaultLauncherSettings');
+      return result;
+    } on PlatformException catch (e) {
+      print("Failed to open launcher settings: '${e.message}'.");
+      return false;
+    }
+  }
 }
+

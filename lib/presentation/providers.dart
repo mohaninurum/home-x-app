@@ -19,3 +19,53 @@ final appsProvider = FutureProvider<List<AppInfo>>((ref) async {
   }
   return apps;
 });
+
+/// Provider for package names of apps that should appear on the Home Screen
+class HomeAppsNotifier extends AsyncNotifier<Set<String>> {
+  static const _key = 'home_screen_apps';
+
+  @override
+  Future<Set<String>> build() async {
+    final prefs = await SharedPreferences.getInstance();
+    final list = prefs.getStringList(_key) ?? [];
+    return list.toSet();
+  }
+
+  Future<void> addApp(String packageName) async {
+    final prefs = await SharedPreferences.getInstance();
+    final current = state.value ?? {};
+    final updated = {...current, packageName};
+    await prefs.setStringList(_key, updated.toList());
+    state = AsyncData(updated);
+  }
+
+  Future<void> removeApp(String packageName) async {
+    final prefs = await SharedPreferences.getInstance();
+    final current = state.value ?? {};
+    final updated = current.where((id) => id != packageName).toSet();
+    await prefs.setStringList(_key, updated.toList());
+    state = AsyncData(updated);
+  }
+
+  Future<void> toggleApp(String packageName) async {
+    final current = state.value ?? {};
+    if (current.contains(packageName)) {
+      await removeApp(packageName);
+    } else {
+      await addApp(packageName);
+    }
+  }
+}
+
+final homeAppsProvider = AsyncNotifierProvider<HomeAppsNotifier, Set<String>>(() {
+  return HomeAppsNotifier();
+});
+
+/// Provider for AppInfo objects that are ON the Home Screen
+final homeAppsListProvider = FutureProvider<List<AppInfo>>((ref) async {
+  final allApps = await ref.watch(appsProvider.future);
+  final homePackageNames = ref.watch(homeAppsProvider).value ?? {};
+  
+  return allApps.where((app) => homePackageNames.contains(app.packageName)).toList();
+});
+

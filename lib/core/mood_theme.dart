@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 
-enum AppMood { romantic, passion, cute, nightLove }
+enum AppMood { romantic, passion, cute, nightLove, hologram }
 
 class MoodTheme {
   final AppMood mood;
@@ -76,5 +76,15 @@ class MoodTheme {
     backgroundGradients: [Color(0x80C2185B), Color(0xFF1A050D), Color(0x4D4A148C)],
   );
 
-  static List<MoodTheme> get values => [romantic, passion, cute, nightLove];
+  static const hologram = MoodTheme(
+    mood: AppMood.hologram,
+    title: "Hologram",
+    primaryColor: Color(0xFF00E5FF),
+    secondaryColor: Color(0xFFD500F9),
+    backgroundColor: Color(0xFF0A0E17),
+    iconHighlightColor: Color(0xFF1DE9B6),
+    backgroundGradients: [Color(0x8000E5FF), Color(0xFF0A0E17), Color(0x66D500F9)],
+  );
+
+  static List<MoodTheme> get values => [romantic, passion, cute, nightLove, hologram];
 }

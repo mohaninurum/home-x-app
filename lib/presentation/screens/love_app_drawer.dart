@@ -10,6 +10,7 @@ class LoveAppDrawer extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final appsAsync = ref.watch(appsProvider);
     final theme = ref.watch(themeMoodProvider);
+    final homeApps = ref.watch(homeAppsProvider).value ?? {};
     final nativeService = ref.read(nativeAppServiceProvider);
 
     return Scaffold(
@@ -36,27 +37,55 @@ class LoveAppDrawer extends ConsumerWidget {
             itemCount: apps.length,
             itemBuilder: (context, index) {
               final app = apps[index];
+              final isOnHome = homeApps.contains(app.packageName);
+              
               return InkWell(
                 onTap: () {
                   nativeService.launchApp(app.packageName);
                 },
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
+                onLongPress: () {
+                  ref.read(homeAppsProvider.notifier).toggleApp(app.packageName);
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                      content: Text(isOnHome ? 'Removed from Home' : 'Added to Home'),
+                      backgroundColor: theme.primaryColor,
+                      duration: const Duration(seconds: 1),
+                    ),
+                  );
+                },
+                child: Stack(
+                  alignment: Alignment.center,
                   children: [
-                    ClipPath(
-                      clipper: DrawerHeartClipper(),
-                      child: Container(
-                        padding: const EdgeInsets.all(4),
-                        color: theme.primaryColor.withOpacity(0.2),
-                        child: Image.memory(app.iconBytes, width: 48, height: 48, fit: BoxFit.cover),
+                    Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        ClipPath(
+                          clipper: DrawerHeartClipper(),
+                          child: Container(
+                            padding: const EdgeInsets.all(4),
+                            color: theme.primaryColor.withOpacity(0.2),
+                            child: Image.memory(app.iconBytes, width: 48, height: 48, fit: BoxFit.cover),
+                          ),
+                        ),
+                        const SizedBox(height: 4),
+                        Text(
+                          app.label,
+                          style: TextStyle(color: theme.primaryColor, fontSize: 10, fontWeight: FontWeight.bold),
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ],
+                    ),
+                    if (isOnHome)
+                      Positioned(
+                        top: 0,
+                        right: 0,
+                        child: Icon(
+                          Icons.favorite,
+                          color: theme.secondaryColor,
+                          size: 16,
+                          shadows: [Shadow(color: theme.backgroundColor, blurRadius: 4)],
+                        ),
                       ),
-                    ),
-                    const SizedBox(height: 4),
-                    Text(
-                      app.label,
-                      style: TextStyle(color: theme.primaryColor, fontSize: 10, fontWeight: FontWeight.bold),
-                      overflow: TextOverflow.ellipsis,
-                    ),
                   ],
                 ),
               );

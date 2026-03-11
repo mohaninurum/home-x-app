@@ -30,25 +30,25 @@ class AnimatedHeartsBackground extends ConsumerStatefulWidget {
   ConsumerState<AnimatedHeartsBackground> createState() => _AnimatedHeartsBackgroundState();
 }
 
-class _AnimatedHeartsBackgroundState extends ConsumerState<AnimatedHeartsBackground> with SingleTickerProviderStateMixin {
+class _AnimatedHeartsBackgroundState extends ConsumerState<AnimatedHeartsBackground>
+    with SingleTickerProviderStateMixin {
   late AnimationController _controller;
   final List<FloatingHeartParticle> _particles = [];
   final Random _random = Random();
-  int _particleCount = 20;
+  final int _particleCount = 20;
+  bool _initialized = false;
 
   @override
   void initState() {
     super.initState();
     _controller = AnimationController(vsync: this, duration: const Duration(seconds: 10))..repeat();
-    _controller.addListener(() {
-      _updateParticles();
-    });
   }
-  
+
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
-    if (_particles.isEmpty) {
+    if (!_initialized) {
+      _initialized = true;
       _initParticles();
     }
   }
@@ -73,16 +73,13 @@ class _AnimatedHeartsBackgroundState extends ConsumerState<AnimatedHeartsBackgro
     );
   }
 
-  void _updateParticles() {
-    final size = MediaQuery.of(context).size;
-    setState(() {
-      for (int i = 0; i < _particles.length; i++) {
-        _particles[i].y -= _particles[i].speedY;
-        if (_particles[i].y < -50) {
-          _particles[i] = _generateParticle(size.height);
-        }
+  void _updateParticles(Size screenSize) {
+    for (int i = 0; i < _particles.length; i++) {
+      _particles[i].y -= _particles[i].speedY;
+      if (_particles[i].y < -50) {
+        _particles[i] = _generateParticle(screenSize.height);
       }
-    });
+    }
   }
 
   @override
@@ -94,20 +91,31 @@ class _AnimatedHeartsBackgroundState extends ConsumerState<AnimatedHeartsBackgro
   @override
   Widget build(BuildContext context) {
     final theme = ref.watch(themeMoodProvider);
-    
+    final screenSize = MediaQuery.of(context).size;
+
     return Container(
       decoration: BoxDecoration(
         gradient: LinearGradient(
           begin: Alignment.topCenter,
           end: Alignment.bottomCenter,
-          colors: theme.backgroundGradients.length >= 2 
-              ? theme.backgroundGradients 
+          colors: theme.backgroundGradients.length >= 2
+              ? theme.backgroundGradients
               : [theme.backgroundColor, theme.backgroundColor],
         ),
       ),
-      child: CustomPaint(
-        painter: HeartsPainter(_particles, theme.primaryColor, theme.secondaryColor),
-        size: Size.infinite,
+      child: AnimatedBuilder(
+        animation: _controller,
+        builder: (context, _) {
+          _updateParticles(screenSize);
+          return CustomPaint(
+            painter: HeartsPainter(
+              List.from(_particles), // snapshot to avoid mutation during paint
+              theme.primaryColor,
+              theme.secondaryColor,
+            ),
+            size: Size.infinite,
+          );
+        },
       ),
     );
   }
@@ -124,11 +132,13 @@ class HeartsPainter extends CustomPainter {
   void paint(Canvas canvas, Size size) {
     for (var particle in particles) {
       final paint = Paint()
-        ..color = Color.lerp(color1, color2, particle.y / size.height)!.withOpacity(particle.opacity)
+        ..color = Color.lerp(color1, color2, particle.y / size.height)!
+            .withOpacity(particle.opacity)
         ..style = PaintingStyle.fill;
 
-      double oscX = particle.x + sin(particle.y * particle.oscillationSpeed) * particle.oscillationAmount;
-      
+      double oscX = particle.x +
+          sin(particle.y * particle.oscillationSpeed) * particle.oscillationAmount;
+
       _drawHeart(canvas, Offset(oscX, particle.y), particle.size, paint);
     }
   }
@@ -137,12 +147,12 @@ class HeartsPainter extends CustomPainter {
     final path = Path();
     path.moveTo(center.dx, center.dy + size / 4);
     path.cubicTo(
-        center.dx - size, center.dy - size * 0.75, 
-        center.dx - size * 0.5, center.dy - size, 
+        center.dx - size, center.dy - size * 0.75,
+        center.dx - size * 0.5, center.dy - size,
         center.dx, center.dy - size * 0.1);
     path.cubicTo(
-        center.dx + size * 0.5, center.dy - size, 
-        center.dx + size, center.dy - size * 0.75, 
+        center.dx + size * 0.5, center.dy - size,
+        center.dx + size, center.dy - size * 0.75,
         center.dx, center.dy + size / 4);
     canvas.drawPath(path, paint);
   }

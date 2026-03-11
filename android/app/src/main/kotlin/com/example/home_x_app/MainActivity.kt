@@ -11,10 +11,15 @@ import android.graphics.drawable.BitmapDrawable
 import android.graphics.drawable.Drawable
 import java.io.ByteArrayOutputStream
 import androidx.annotation.NonNull
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 
 class MainActivity: FlutterFragmentActivity() {
 
     private val CHANNEL = "com.example.homexapp/launcher"
+    private val scope = CoroutineScope(Dispatchers.Main)
 
     override fun configureFlutterEngine(@NonNull flutterEngine: FlutterEngine) {
         super.configureFlutterEngine(flutterEngine)
@@ -25,8 +30,15 @@ class MainActivity: FlutterFragmentActivity() {
                 when (call.method) {
 
                     "getApps" -> {
-                        val apps = getInstalledApps()
-                        result.success(apps)
+                        // Run on IO thread — loading icons is very slow on main thread
+                        scope.launch {
+                            try {
+                                val apps = withContext(Dispatchers.IO) { getInstalledApps() }
+                                result.success(apps)
+                            } catch (e: Exception) {
+                                result.error("GET_APPS_ERROR", e.message, null)
+                            }
+                        }
                     }
 
                     "launchApp" -> {
@@ -64,6 +76,18 @@ class MainActivity: FlutterFragmentActivity() {
                         }
 
                         result.success(true)
+                    }
+
+                    "openDefaultLauncherSettings" -> {
+                        try {
+                            val intent = Intent(android.provider.Settings.ACTION_HOME_SETTINGS)
+                            startActivity(intent)
+                            result.success(true)
+                        } catch (e: Exception) {
+                            val intent = Intent(android.provider.Settings.ACTION_SETTINGS)
+                            startActivity(intent)
+                            result.success(false)
+                        }
                     }
 
                     else -> result.notImplemented()
