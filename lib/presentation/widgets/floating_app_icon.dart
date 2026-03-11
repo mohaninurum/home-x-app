@@ -1,43 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'dart:typed_data';
 import '../../domain/app_info.dart';
 import '../providers.dart';
 import '../theme_provider.dart';
 import '../../core/mood_theme.dart';
-import 'dart:typed_data';
-import 'package:image/image.dart' as img;
 
-Uint8List removeWhiteBackground(Uint8List bytes) {
-  final image = img.decodeImage(bytes);
-  if (image == null) return bytes;
-
-  const int threshold = 220;
-
-  for (int y = 0; y < image.height; y++) {
-    for (int x = 0; x < image.width; x++) {
-      final pixel = image.getPixel(x, y);
-
-      int r = pixel.r.toInt();
-      int g = pixel.g.toInt();
-      int b = pixel.b.toInt();
-
-      // white distance detect
-      int diff = (255 - r) + (255 - g) + (255 - b);
-
-      if (r > threshold && g > threshold && b > threshold) {
-        // fully transparent
-        image.setPixelRgba(x, y, r, g, b, 0);
-      } else if (diff < 120) {
-        // smooth edge transparency
-        int alpha = (diff * 2).clamp(0, 255);
-        image.setPixelRgba(x, y, r, g, b, alpha);
-      }
-    }
-  }
-
-  return Uint8List.fromList(img.encodePng(image));
-}
 
 class StyledAppIcon extends StatelessWidget {
   final AppInfo app;
@@ -400,10 +369,16 @@ class AppIconContent extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final theme = ref.watch(themeMoodProvider);
     final iconStyle = ref.watch(iconStyleProvider).value ?? AppIconStyle.box;
-    final iconBytes = removeWhiteBackground(app.iconBytes);
+    final processedIcon = ref.watch(processedIconProvider(app.iconBytes));
 
-    return iconStyle == AppIconStyle.box
-        ? StyledAppIcon(app: app, theme: theme, iconBytes: iconBytes)
-        : StyledAppIconTwo(app: app, theme: theme, iconBytes: iconBytes);
+    return processedIcon.when(
+      data: (iconBytes) => iconStyle == AppIconStyle.box
+          ? StyledAppIcon(app: app, theme: theme, iconBytes: iconBytes)
+          : StyledAppIconTwo(app: app, theme: theme, iconBytes: iconBytes),
+      loading: () => const Center(child: CircularProgressIndicator()),
+      error: (err, _) => iconStyle == AppIconStyle.box
+          ? StyledAppIcon(app: app, theme: theme, iconBytes: app.iconBytes)
+          : StyledAppIconTwo(app: app, theme: theme, iconBytes: app.iconBytes),
+    );
   }
 }

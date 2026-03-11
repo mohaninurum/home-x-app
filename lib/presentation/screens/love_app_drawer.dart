@@ -4,6 +4,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../providers.dart';
 import '../theme_provider.dart';
 import '../widgets/floating_app_icon.dart';
+import '../widgets/animated_hearts_background.dart';
+import '../widgets/gesture_drawing_detector.dart';
 import '../../core/mood_theme.dart';
 
 class LoveAppDrawer extends ConsumerWidget {
@@ -39,6 +41,8 @@ class LoveAppDrawer extends ConsumerWidget {
             Positioned.fill(
               child: Container(color: Colors.black45),
             ),
+          if (wallpaperPath == null)
+            const GestureDrawingDetector(child: AnimatedHeartsBackground()),
           appsAsync.when(
         data: (apps) {
           if (apps.isEmpty) {
@@ -83,17 +87,7 @@ class LoveAppDrawer extends ConsumerWidget {
                 child: Stack(
                   alignment: Alignment.center,
                   children: [
-                    iconStyle == AppIconStyle.box
-                        ? StyledAppIcon(
-                            app: app,
-                            theme: theme,
-                            iconBytes: removeWhiteBackground(app.iconBytes),
-                          )
-                        : StyledAppIconTwo(
-                            app: app,
-                            theme: theme,
-                            iconBytes: removeWhiteBackground(app.iconBytes),
-                          ),
+                    AppIconContent(app: app),
                     if (isOnHome)
                       Positioned(
                         top: 0,

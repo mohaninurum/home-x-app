@@ -3,6 +3,41 @@ import 'package:shared_preferences/shared_preferences.dart';
 import '../domain/app_info.dart';
 import '../data/native_app_service.dart';
 import '../core/mood_theme.dart';
+import 'dart:typed_data';
+import 'package:image/image.dart' as img;
+import 'package:path_provider/path_provider.dart';
+import 'dart:io';
+
+Uint8List removeWhiteBackground(Uint8List bytes) {
+  final image = img.decodeImage(bytes);
+  if (image == null) return bytes;
+
+  const int threshold = 220;
+
+  for (int y = 0; y < image.height; y++) {
+    for (int x = 0; x < image.width; x++) {
+      final pixel = image.getPixel(x, y);
+
+      int r = pixel.r.toInt();
+      int g = pixel.g.toInt();
+      int b = pixel.b.toInt();
+
+      // white distance detect
+      int diff = (255 - r) + (255 - g) + (255 - b);
+
+      if (r > threshold && g > threshold && b > threshold) {
+        // fully transparent
+        image.setPixelRgba(x, y, r, g, b, 0);
+      } else if (diff < 120) {
+        // smooth edge transparency
+        int alpha = (diff * 2).clamp(0, 255);
+        image.setPixelRgba(x, y, r, g, b, alpha);
+      }
+    }
+  }
+
+  return Uint8List.fromList(img.encodePng(image));
+}
 
 final nativeAppServiceProvider = Provider<NativeAppService>((ref) {
   return NativeAppService();
@@ -104,8 +139,18 @@ class WallpaperNotifier extends AsyncNotifier<String?> {
 
   Future<void> setWallpaper(String path) async {
     final prefs = await SharedPreferences.getInstance();
-    await prefs.setString(_key, path);
-    state = AsyncData(path);
+    final appDir = await getApplicationDocumentsDirectory();
+    final file = File(path);
+    final extension = path.contains('.') ? path.split('.').last : 'jpg';
+    final savedPath = '${appDir.path}/wallpaper.$extension';
+
+    // Copy to permanent storage
+    if (await file.exists()) {
+      await file.copy(savedPath);
+    }
+
+    await prefs.setString(_key, savedPath);
+    state = AsyncData(savedPath);
   }
 
   Future<void> clearWallpaper() async {
@@ -117,6 +162,13 @@ class WallpaperNotifier extends AsyncNotifier<String?> {
 
 final wallpaperProvider = AsyncNotifierProvider<WallpaperNotifier, String?>(() {
   return WallpaperNotifier();
+});
+
+/// Cache for processed app icons to avoid lag in build()
+final processedIconProvider = FutureProvider.family<Uint8List, Uint8List>((ref, originalBytes) async {
+  // Use compute or similar for heavy processing in a real app, 
+  // but provider caching already helps significantly by only running once.
+  return removeWhiteBackground(originalBytes);
 });
 
 

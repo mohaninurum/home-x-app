@@ -159,7 +159,9 @@ class SettingsScreen extends ConsumerWidget {
                 // Current wallpaper preview
                 if (wallpaperPath != null)
                   ClipRRect(
-                    borderRadius: const BorderRadius.vertical(top: Radius.circular(12)),
+                    borderRadius: const BorderRadius.vertical(
+                      top: Radius.circular(12),
+                    ),
                     child: SizedBox(
                       height: 120,
                       width: double.infinity,
@@ -176,7 +178,9 @@ class SettingsScreen extends ConsumerWidget {
                 ListTile(
                   leading: Icon(Icons.wallpaper, color: theme.primaryColor),
                   title: Text(
-                    wallpaperPath != null ? 'Change Wallpaper' : 'Set Wallpaper',
+                    wallpaperPath != null
+                        ? 'Change Wallpaper'
+                        : 'Set Wallpaper',
                     style: TextStyle(color: theme.primaryColor),
                   ),
                   subtitle: Text(
@@ -195,7 +199,10 @@ class SettingsScreen extends ConsumerWidget {
                 // Clear wallpaper tile
                 if (wallpaperPath != null)
                   ListTile(
-                    leading: Icon(Icons.delete_outline, color: Colors.redAccent),
+                    leading: Icon(
+                      Icons.delete_outline,
+                      color: Colors.redAccent,
+                    ),
                     title: const Text(
                       'Remove Wallpaper',
                       style: TextStyle(color: Colors.redAccent),
@@ -246,7 +253,9 @@ class SettingsScreen extends ConsumerWidget {
                 size: 16,
               ),
               onTap: () {
-                // ref.read(nativeAppServiceProvider).openDefaultLauncherSettings();
+                ref
+                    .read(nativeAppServiceProvider)
+                    .openDefaultLauncherSettings();
               },
             ),
           ),
