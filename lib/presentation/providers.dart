@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../domain/app_info.dart';
+import '../domain/icon_customization.dart';
 import '../data/native_app_service.dart';
 import '../core/mood_theme.dart';
 import 'dart:typed_data';
@@ -63,14 +64,71 @@ class IconStyleNotifier extends AsyncNotifier<AppIconStyle> {
   }
 }
 
-final iconStyleProvider = AsyncNotifierProvider<IconStyleNotifier, AppIconStyle>(() {
-  return IconStyleNotifier();
-});
+final iconStyleProvider =
+    AsyncNotifierProvider<IconStyleNotifier, AppIconStyle>(() {
+      return IconStyleNotifier();
+    });
+
+/// Provider for global app icon customization settings
+class IconCustomizationNotifier extends AsyncNotifier<IconCustomization> {
+  static const _key = 'app_icon_customization';
+
+  @override
+  Future<IconCustomization> build() async {
+    final prefs = await SharedPreferences.getInstance();
+    final jsonStr = prefs.getString(_key);
+    if (jsonStr != null) {
+      try {
+        return IconCustomization.fromMap(jsonDecode(jsonStr));
+      } catch (e) {
+        // Fallback to default
+      }
+    }
+    return const IconCustomization();
+  }
+
+  Future<void> updateCustomization({
+    double? sizeMultiplier,
+    double? shadowMultiplier,
+    double? borderRadiusMultiplier,
+    double? textSizeMultiplier,
+    double? spacingMultiplier,
+    int? backgroundColorValue,
+    bool clearBackgroundColor = false,
+  }) async {
+    final current = state.value ?? const IconCustomization();
+    final updated = current.copyWith(
+      sizeMultiplier: sizeMultiplier,
+      shadowMultiplier: shadowMultiplier,
+      borderRadiusMultiplier: borderRadiusMultiplier,
+      textSizeMultiplier: textSizeMultiplier,
+      spacingMultiplier: spacingMultiplier,
+      backgroundColorValue: backgroundColorValue,
+      clearBackgroundColor: clearBackgroundColor,
+    );
+
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString(_key, jsonEncode(updated.toMap()));
+    state = AsyncData(updated);
+  }
+
+  Future<void> resetToDefaults() async {
+    const defaultSettings = IconCustomization();
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString(_key, jsonEncode(defaultSettings.toMap()));
+    state = const AsyncData(defaultSettings);
+  }
+}
+
+final iconCustomizationProvider =
+    AsyncNotifierProvider<IconCustomizationNotifier, IconCustomization>(() {
+      return IconCustomizationNotifier();
+    });
 
 final appsProvider = FutureProvider<List<AppInfo>>((ref) async {
   final service = ref.watch(nativeAppServiceProvider);
   final apps = await service.getInstalledApps();
-  
+
   // Load saved positions
   final prefs = await SharedPreferences.getInstance();
   for (var app in apps) {
@@ -80,6 +138,12 @@ final appsProvider = FutureProvider<List<AppInfo>>((ref) async {
   return apps;
 });
 
+/// Provider for the initial 4 default apps
+final defaultPackagesProvider = FutureProvider<Set<String>>((ref) async {
+  final allApps = await ref.watch(appsProvider.future);
+  return allApps.take(4).map((a) => a.packageName).toSet();
+});
+
 /// Provider for package names of apps that should appear on the Home Screen
 class HomeAppsNotifier extends AsyncNotifier<Set<String>> {
   static const _key = 'home_screen_apps';
@@ -87,7 +151,7 @@ class HomeAppsNotifier extends AsyncNotifier<Set<String>> {
   @override
   Future<Set<String>> build() async {
     final prefs = await SharedPreferences.getInstance();
-    
+
     final hasInitialized = prefs.getBool('has_initialized_defaults') ?? false;
     if (!hasInitialized) {
       final allApps = await ref.watch(appsProvider.future);
@@ -96,23 +160,25 @@ class HomeAppsNotifier extends AsyncNotifier<Set<String>> {
       await prefs.setBool('has_initialized_defaults', true);
       return defaultApps.toSet();
     }
-    
+
     final list = prefs.getStringList(_key) ?? [];
     return list.toSet();
   }
 
   Future<void> addApp(String packageName) async {
     final prefs = await SharedPreferences.getInstance();
-    
+
     // Assign a default position if not set
     if (!prefs.containsKey('${packageName}_x')) {
       await prefs.setDouble('${packageName}_x', 150.0);
       await prefs.setDouble('${packageName}_y', 300.0);
-      
+
       final currentApps = ref.read(appsProvider).value;
       if (currentApps != null) {
         try {
-          final app = currentApps.firstWhere((a) => a.packageName == packageName);
+          final app = currentApps.firstWhere(
+            (a) => a.packageName == packageName,
+          );
           app.xPos = 150.0;
           app.yPos = 300.0;
         } catch (_) {}
@@ -122,7 +188,7 @@ class HomeAppsNotifier extends AsyncNotifier<Set<String>> {
     final current = state.value ?? {};
     final updated = {...current, packageName};
     await prefs.setStringList(_key, updated.toList());
-    
+
     state = AsyncData(updated);
   }
 
@@ -145,40 +211,63 @@ class HomeAppsNotifier extends AsyncNotifier<Set<String>> {
 
   Future<void> addAppAt(String packageName, double x, double y) async {
     final prefs = await SharedPreferences.getInstance();
+
     await prefs.setDouble('${packageName}_x', x);
     await prefs.setDouble('${packageName}_y', y);
-    
-    final currentApps = ref.read(appsProvider).value;
-    if (currentApps != null) {
-      try {
-        final app = currentApps.firstWhere((a) => a.packageName == packageName);
-        app.xPos = x;
-        app.yPos = y;
-      } catch (_) {}
-    }
-    
+
     final current = state.value ?? {};
+
     if (!current.contains(packageName)) {
       final updated = {...current, packageName};
       await prefs.setStringList(_key, updated.toList());
+
       state = AsyncData(updated);
     } else {
       state = AsyncData(current);
-      ref.invalidate(homeAppsListProvider);
     }
+    // ref.invalidate(homeAppsListProvider);
+    // ref.invalidate(homeAppsListProvider); // Removed to prevent circular dependency
   }
+  // Future<void> addAppAt(String packageName, double x, double y) async {
+  //   final prefs = await SharedPreferences.getInstance();
+  //   await prefs.setDouble('${packageName}_x', x);
+  //   await prefs.setDouble('${packageName}_y', y);
+
+  //   final currentApps = ref.read(appsProvider).value;
+  //   if (currentApps != null) {
+  //     try {
+  //       final app = currentApps.firstWhere((a) => a.packageName == packageName);
+  //       app.xPos = x;
+  //       app.yPos = y;
+  //     } catch (_) {}
+  //   }
+
+  //   final current = state.value ?? {};
+  //   if (!current.contains(packageName)) {
+  //     final updated = {...current, packageName};
+  //     await prefs.setStringList(_key, updated.toList());
+  //     state = AsyncData(updated);
+  //   } else {
+  //     state = AsyncData(current);
+  //     ref.invalidate(homeAppsListProvider);
+  //   }
+  // }
 }
 
-final homeAppsProvider = AsyncNotifierProvider<HomeAppsNotifier, Set<String>>(() {
-  return HomeAppsNotifier();
-});
+final homeAppsProvider = AsyncNotifierProvider<HomeAppsNotifier, Set<String>>(
+  () {
+    return HomeAppsNotifier();
+  },
+);
 
 /// Provider for AppInfo objects that are ON the Home Screen
 final homeAppsListProvider = FutureProvider<List<AppInfo>>((ref) async {
   final allApps = await ref.watch(appsProvider.future);
   final homePackageNames = ref.watch(homeAppsProvider).value ?? {};
-  
-  return allApps.where((app) => homePackageNames.contains(app.packageName)).toList();
+
+  return allApps
+      .where((app) => homePackageNames.contains(app.packageName))
+      .toList();
 });
 
 /// Provider for the custom wallpaper image path
@@ -240,16 +329,17 @@ class WidgetPositionNotifier extends AsyncNotifier<Map<String, Offset>> {
     final prefs = await SharedPreferences.getInstance();
     await prefs.setDouble('${_keyPrefix}${widgetId}_x', offset.dx);
     await prefs.setDouble('${_keyPrefix}${widgetId}_y', offset.dy);
-    
+
     final current = state.value ?? {};
     final updated = Map<String, Offset>.from(current)..[widgetId] = offset;
     state = AsyncData(updated);
   }
 }
 
-final widgetPositionProvider = AsyncNotifierProvider<WidgetPositionNotifier, Map<String, Offset>>(() {
-  return WidgetPositionNotifier();
-});
+final widgetPositionProvider =
+    AsyncNotifierProvider<WidgetPositionNotifier, Map<String, Offset>>(() {
+      return WidgetPositionNotifier();
+    });
 
 /// Model for widgets placed on the home screen
 class HomeWidget {
@@ -309,7 +399,12 @@ class HomeWidgetsNotifier extends AsyncNotifier<List<HomeWidget>> {
     return data.map((item) => HomeWidget.fromMap(jsonDecode(item))).toList();
   }
 
-  Future<void> addWidget(String packageName, double x, double y, {String? imagePath}) async {
+  Future<void> addWidget(
+    String packageName,
+    double x,
+    double y, {
+    String? imagePath,
+  }) async {
     final prefs = await SharedPreferences.getInstance();
     final current = state.value ?? [];
     final newWidget = HomeWidget(
@@ -320,7 +415,10 @@ class HomeWidgetsNotifier extends AsyncNotifier<List<HomeWidget>> {
       imagePath: imagePath,
     );
     final updated = [...current, newWidget];
-    await prefs.setStringList(_key, updated.map((w) => jsonEncode(w.toMap())).toList());
+    await prefs.setStringList(
+      _key,
+      updated.map((w) => jsonEncode(w.toMap())).toList(),
+    );
     state = AsyncData(updated);
   }
 
@@ -333,7 +431,10 @@ class HomeWidgetsNotifier extends AsyncNotifier<List<HomeWidget>> {
       }
       return w;
     }).toList();
-    await prefs.setStringList(_key, updated.map((w) => jsonEncode(w.toMap())).toList());
+    await prefs.setStringList(
+      _key,
+      updated.map((w) => jsonEncode(w.toMap())).toList(),
+    );
     state = AsyncData(updated);
   }
 
@@ -341,18 +442,25 @@ class HomeWidgetsNotifier extends AsyncNotifier<List<HomeWidget>> {
     final prefs = await SharedPreferences.getInstance();
     final current = state.value ?? [];
     final updated = current.where((w) => w.id != id).toList();
-    await prefs.setStringList(_key, updated.map((w) => jsonEncode(w.toMap())).toList());
+    await prefs.setStringList(
+      _key,
+      updated.map((w) => jsonEncode(w.toMap())).toList(),
+    );
     state = AsyncData(updated);
   }
 }
 
-final homeWidgetsProvider = AsyncNotifierProvider<HomeWidgetsNotifier, List<HomeWidget>>(() {
-  return HomeWidgetsNotifier();
-});
+final homeWidgetsProvider =
+    AsyncNotifierProvider<HomeWidgetsNotifier, List<HomeWidget>>(() {
+      return HomeWidgetsNotifier();
+    });
 
 /// Cache for processed app icons to avoid lag in build()
-final processedIconProvider = FutureProvider.family<Uint8List, Uint8List>((ref, originalBytes) async {
-  // Use compute or similar for heavy processing in a real app, 
+final processedIconProvider = FutureProvider.family<Uint8List, Uint8List>((
+  ref,
+  originalBytes,
+) async {
+  // Use compute or similar for heavy processing in a real app,
   // but provider caching already helps significantly by only running once.
   return removeWhiteBackground(originalBytes);
 });
@@ -381,8 +489,7 @@ class HeartAnimationNotifier extends AsyncNotifier<bool> {
   }
 }
 
-final heartAnimationProvider = AsyncNotifierProvider<HeartAnimationNotifier, bool>(() {
-  return HeartAnimationNotifier();
-});
-
-
+final heartAnimationProvider =
+    AsyncNotifierProvider<HeartAnimationNotifier, bool>(() {
+      return HeartAnimationNotifier();
+    });

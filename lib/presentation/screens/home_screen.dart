@@ -188,31 +188,48 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
                         // Capture unset apps or previously misaligned dock apps (those sitting above dock)
                         // This absorbs any floating app near the dock into a clean layout
                         final dockApps = allFloatingApps
-                            .where((a) => a.yPos <= 0 || a.yPos > dockThresholdY)
+                            .where(
+                              (a) => a.yPos <= 0 || a.yPos > dockThresholdY,
+                            )
                             .toList();
 
                         if (dockApps.isNotEmpty) {
                           // Sort by existing X to maintain visual order
                           dockApps.sort((a, b) => a.xPos.compareTo(b.xPos));
-                          
+
                           final dockMargin = 20.sw(context);
                           final dockPadding = 15.sw(context);
-                          final plusBtnWidth = 55.sh(context); // Fixed circular shape
-                          final iconSize = 52.0.sw(context);
-                          
+                          final plusBtnWidth = 55.sh(
+                            context,
+                          ); // Fixed circular shape
+                          final iconSize = 48.0.sw(context);
+
                           // Calculate the exact center of the space dedicated for apps
                           final appAreaStartX = dockMargin + dockPadding;
-                          final appAreaEndX = screenWidth - dockMargin - dockPadding - plusBtnWidth - 10.sw(context);
+                          final appAreaEndX =
+                              screenWidth -
+                              dockMargin -
+                              dockPadding -
+                              plusBtnWidth -
+                              10.sw(context);
                           final appAreaWidth = appAreaEndX - appAreaStartX;
-                          
-                          final double spacing = dockApps.length > 3 ? 10.sw(context) : 20.sw(context);
-                          final double totalWidth = dockApps.length * iconSize + (dockApps.length - 1) * spacing;
-                          
-                          final startX = appAreaStartX + (appAreaWidth - totalWidth) / 2;
-                          final dockY = screenHeight - 91.0.sh(context); // Exact vertical center of dock
+
+                          final double spacing = dockApps.length > 3
+                              ? 10.sw(context)
+                              : 20.sw(context);
+                          final double totalWidth =
+                              dockApps.length * iconSize +
+                              (dockApps.length - 1) * spacing;
+
+                          final startX =
+                              appAreaStartX + (appAreaWidth - totalWidth) / 2;
+                          final dockY =
+                              screenHeight -
+                              91.0.sh(context); // Exact vertical center of dock
 
                           for (int i = 0; i < dockApps.length; i++) {
-                            dockApps[i].xPos = startX + (i * (iconSize + spacing));
+                            dockApps[i].xPos =
+                                startX + (i * (iconSize + spacing));
                             dockApps[i].yPos = dockY;
                           }
                         }
@@ -261,24 +278,30 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
                                   // Snapping logic: align to center of dock
                                   final dockHeight = 80.sh(context);
                                   final iconSize = 52.sw(context);
-                                  final dockTop = screenHeight - 105.sh(context);
-                                  final snappedY = dockTop + (dockHeight - iconSize) / 2;
-                                  
+                                  final dockTop =
+                                      screenHeight - 105.sh(context);
+                                  final snappedY =
+                                      dockTop + (dockHeight - iconSize) / 2;
+
                                   // Find current x position relative to screen
                                   // For now, keep the drop xpos but snap y
                                   // In a more advanced version, we'd calculate grid cells inside the dock
-                                  
+
                                   // Since FloatingAppIcon handles its own state for dragging on home_screen currently,
                                   // we might need to trigger a refresh or update provider.
                                   // However, the simple fix is to ensure the app state is updated.
                                   data.yPos = snappedY;
-                                  
+
                                   // Persist
-                                  final prefs = await SharedPreferences.getInstance();
-                                  await prefs.setDouble('${data.packageName}_y', snappedY);
-                                  
+                                  final prefs =
+                                      await SharedPreferences.getInstance();
+                                  await prefs.setDouble(
+                                    '${data.packageName}_y',
+                                    snappedY,
+                                  );
+
                                   // Trigger rebuild of icons
-                                  ref.invalidate(homeAppsListProvider);
+                                  // ref.invalidate(homeAppsListProvider); // Removed to prevent circular dependency
                                 },
                                 builder: (context, candidateData, rejectedData) {
                                   return Container(
@@ -288,15 +311,19 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
                                       horizontal: 15.sw(context),
                                     ),
                                     decoration: BoxDecoration(
-                                      color: candidateData.isNotEmpty 
-                                        ? Colors.white.withAlpha(50) 
-                                        : Colors.white.withAlpha(25),
-                                      borderRadius: BorderRadius.circular(25.sw(context)),
+                                      color: candidateData.isNotEmpty
+                                          ? Colors.white.withAlpha(50)
+                                          : Colors.white.withAlpha(25),
+                                      borderRadius: BorderRadius.circular(
+                                        25.sw(context),
+                                      ),
                                       border: Border.all(
                                         color: candidateData.isNotEmpty
-                                          ? Colors.white.withAlpha(60)
-                                          : Colors.white.withAlpha(30),
-                                        width: candidateData.isNotEmpty ? 2.0 : 1.0,
+                                            ? Colors.white.withAlpha(60)
+                                            : Colors.white.withAlpha(30),
+                                        width: candidateData.isNotEmpty
+                                            ? 2.0
+                                            : 1.0,
                                       ),
                                     ),
                                     margin: EdgeInsets.symmetric(
@@ -314,7 +341,9 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
                                               width: 55.sh(context),
                                               height: 55.sh(context),
                                               decoration: BoxDecoration(
-                                                color: Colors.white.withAlpha(40),
+                                                color: Colors.white.withAlpha(
+                                                  40,
+                                                ),
                                                 shape: BoxShape.circle,
                                               ),
                                               child: Icon(
@@ -494,7 +523,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
                 Positioned(
                   top: MediaQuery.of(context).padding.top + 10.sh(context),
                   left: 20.sw(context),
-                  right: 20.sw(context),
+                  right: 60.sw(context),
                   child: Row(
                     children: [
                       Expanded(
@@ -551,16 +580,6 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
                         ),
                       ),
                       SizedBox(width: 10.sw(context)),
-                      IconButton(
-                        icon: Icon(
-                          Icons.settings,
-                          color: Colors.white70,
-                          size: 24.sw(context),
-                        ),
-                        onPressed: () {
-                          Navigator.pushNamed(context, '/settings');
-                        },
-                      ),
                     ],
                   ),
                 ),
@@ -655,6 +674,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
                       ),
                     ),
                   ),
+
                 Positioned(
                   top: MediaQuery.of(context).padding.top + 10.sh(context),
                   right: 16.sw(context),
