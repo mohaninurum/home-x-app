@@ -12,12 +12,16 @@ class StyledAppIcon extends StatelessWidget {
   final AppInfo app;
   final MoodTheme theme;
   final Uint8List iconBytes;
+  final bool showLabel;
+  final double size;
 
   const StyledAppIcon({
     super.key,
     required this.app,
     required this.theme,
     required this.iconBytes,
+    this.showLabel = true,
+    this.size = 64.0,
   });
 
   @override
@@ -30,10 +34,10 @@ class StyledAppIcon extends StatelessWidget {
       mainAxisSize: MainAxisSize.min,
       children: [
         Container(
-          width: 64,
-          height: 64,
+          width: size,
+          height: size,
           decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(16),
+            borderRadius: BorderRadius.circular(size * 0.25),
             gradient: LinearGradient(
               begin: Alignment.topLeft,
               end: Alignment.bottomRight,
@@ -55,20 +59,20 @@ class StyledAppIcon extends StatelessWidget {
               // Ambient 3D Drop shadow
               BoxShadow(
                 color: Colors.black.withOpacity(0.5),
-                offset: const Offset(6, 10),
-                blurRadius: 15,
+                offset: Offset(size * 0.09, size * 0.15),
+                blurRadius: size * 0.23,
               ),
               // Sharp ground contact shadow
               BoxShadow(
                 color: Colors.black.withOpacity(0.4),
-                offset: const Offset(2, 3),
-                blurRadius: 4,
+                offset: Offset(size * 0.03, size * 0.05),
+                blurRadius: size * 0.06,
               ),
               // Top-left outer rim highlight
               BoxShadow(
                 color: Colors.white.withOpacity(0.6),
-                offset: const Offset(-2, -2),
-                blurRadius: 4,
+                offset: Offset(-size * 0.03, -size * 0.03),
+                blurRadius: size * 0.06,
               ),
             ],
             border: Border.all(
@@ -80,7 +84,7 @@ class StyledAppIcon extends StatelessWidget {
           ),
           child: Container(
             decoration: BoxDecoration(
-              borderRadius: BorderRadius.circular(14),
+              borderRadius: BorderRadius.circular(size * 0.22),
               gradient: LinearGradient(
                 begin: Alignment.topLeft,
                 end: Alignment.bottomRight,
@@ -93,7 +97,7 @@ class StyledAppIcon extends StatelessWidget {
                 stops: const [0.0, 0.3, 0.7, 1.0],
               ),
             ),
-            padding: const EdgeInsets.all(12),
+            padding: EdgeInsets.all(size * 0.18),
             child: Image.memory(
               iconBytes,
               fit: BoxFit.contain,
@@ -101,39 +105,41 @@ class StyledAppIcon extends StatelessWidget {
             ),
           ),
         ),
-        const SizedBox(height: 8),
-        Container(
-          padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 2),
-          decoration: theme.mood == AppMood.hologram
-              ? BoxDecoration(
-                  color: Colors.black26,
-                  borderRadius: BorderRadius.circular(4),
-                  border: Border.all(
-                    color: theme.primaryColor.withOpacity(0.3),
-                    width: 0.5,
-                  ),
-                )
-              : null,
-          child: Text(
-            app.label,
-            style: TextStyle(
-              color: theme.mood == AppMood.hologram
-                  ? theme.primaryColor
-                  : Colors.black87,
-              fontSize: 10,
-              fontWeight: FontWeight.bold,
-              shadows: [
-                Shadow(color: theme.backgroundColor, blurRadius: 2),
-                if (theme.mood == AppMood.hologram)
-                  Shadow(
-                    color: theme.primaryColor.withOpacity(0.5),
-                    blurRadius: 8,
-                  ),
-              ],
+        if (showLabel) ...[
+          const SizedBox(height: 8),
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 2),
+            decoration: theme.mood == AppMood.hologram
+                ? BoxDecoration(
+                    color: Colors.black26,
+                    borderRadius: BorderRadius.circular(4),
+                    border: Border.all(
+                      color: theme.primaryColor.withOpacity(0.3),
+                      width: 0.5,
+                    ),
+                  )
+                : null,
+            child: Text(
+              app.label,
+              style: TextStyle(
+                color: theme.mood == AppMood.hologram
+                    ? theme.primaryColor
+                    : Colors.black87,
+                fontSize: 10,
+                fontWeight: FontWeight.bold,
+                shadows: [
+                  Shadow(color: theme.backgroundColor, blurRadius: 2),
+                  if (theme.mood == AppMood.hologram)
+                    Shadow(
+                      color: theme.primaryColor.withOpacity(0.5),
+                      blurRadius: 8,
+                    ),
+                ],
+              ),
+              overflow: TextOverflow.ellipsis,
             ),
-            overflow: TextOverflow.ellipsis,
           ),
-        ),
+        ],
       ],
     );
   }
@@ -143,12 +149,16 @@ class StyledAppIconTwo extends StatelessWidget {
   final AppInfo app;
   final MoodTheme theme;
   final Uint8List iconBytes;
+  final bool showLabel;
+  final double size;
 
   const StyledAppIconTwo({
     super.key,
     required this.app,
     required this.theme,
     required this.iconBytes,
+    this.showLabel = true,
+    this.size = 64.0,
   });
 
   @override
@@ -161,8 +171,8 @@ class StyledAppIconTwo extends StatelessWidget {
       mainAxisSize: MainAxisSize.min,
       children: [
         Container(
-          width: 64,
-          height: 64,
+          width: size,
+          height: size,
           decoration: BoxDecoration(
             shape: BoxShape.circle,
             gradient: LinearGradient(
@@ -185,14 +195,14 @@ class StyledAppIconTwo extends StatelessWidget {
               // Bottom Shadow (Depth/Skeuomorphism)
               BoxShadow(
                 color: Colors.black.withOpacity(0.3),
-                offset: const Offset(4, 4),
-                blurRadius: 8,
+                offset: Offset(size * 0.06, size * 0.06),
+                blurRadius: size * 0.12,
               ),
               // Inner Highlight (Top Edge - Skeuomorphism)
               BoxShadow(
                 color: Colors.white.withOpacity(0.4),
-                offset: const Offset(-2, -2),
-                blurRadius: 4,
+                offset: Offset(-size * 0.03, -size * 0.03),
+                blurRadius: size * 0.06,
               ),
             ],
             border: Border.all(
@@ -203,7 +213,7 @@ class StyledAppIconTwo extends StatelessWidget {
             ),
           ),
           child: Container(
-            margin: const EdgeInsets.all(8),
+            margin: EdgeInsets.all(size * 0.12),
             decoration: BoxDecoration(
               shape: BoxShape.circle,
               image: DecorationImage(
@@ -213,39 +223,41 @@ class StyledAppIconTwo extends StatelessWidget {
             ),
           ),
         ),
-        const SizedBox(height: 8),
-        Container(
-          padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 2),
-          decoration: theme.mood == AppMood.hologram
-              ? BoxDecoration(
-                  color: Colors.black26,
-                  borderRadius: BorderRadius.circular(4),
-                  border: Border.all(
-                    color: theme.primaryColor.withOpacity(0.3),
-                    width: 0.5,
-                  ),
-                )
-              : null,
-          child: Text(
-            app.label,
-            style: TextStyle(
-              color: theme.mood == AppMood.hologram
-                  ? theme.primaryColor
-                  : Colors.black87,
-              fontSize: 10,
-              fontWeight: FontWeight.bold,
-              shadows: [
-                Shadow(color: theme.backgroundColor, blurRadius: 2),
-                if (theme.mood == AppMood.hologram)
-                  Shadow(
-                    color: theme.primaryColor.withOpacity(0.5),
-                    blurRadius: 8,
-                  ),
-              ],
+        if (showLabel) ...[
+          const SizedBox(height: 8),
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 2),
+            decoration: theme.mood == AppMood.hologram
+                ? BoxDecoration(
+                    color: Colors.black26,
+                    borderRadius: BorderRadius.circular(4),
+                    border: Border.all(
+                      color: theme.primaryColor.withOpacity(0.3),
+                      width: 0.5,
+                    ),
+                  )
+                : null,
+            child: Text(
+              app.label,
+              style: TextStyle(
+                color: theme.mood == AppMood.hologram
+                    ? theme.primaryColor
+                    : Colors.black87,
+                fontSize: 10,
+                fontWeight: FontWeight.bold,
+                shadows: [
+                  Shadow(color: theme.backgroundColor, blurRadius: 2),
+                  if (theme.mood == AppMood.hologram)
+                    Shadow(
+                      color: theme.primaryColor.withOpacity(0.5),
+                      blurRadius: 8,
+                    ),
+                ],
+              ),
+              overflow: TextOverflow.ellipsis,
             ),
-            overflow: TextOverflow.ellipsis,
           ),
-        ),
+        ],
       ],
     );
   }
@@ -255,12 +267,14 @@ class FloatingAppIcon extends ConsumerStatefulWidget {
   final AppInfo app;
   final bool isFloating;
   final VoidCallback? onLongPress;
+  final bool showLabel;
 
   const FloatingAppIcon({
     super.key,
     required this.app,
     this.isFloating = true,
     this.onLongPress,
+    this.showLabel = false,
   });
 
   @override
@@ -278,7 +292,7 @@ class _FloatingAppIconState extends ConsumerState<FloatingAppIcon> {
     yPos = widget.app.yPos;
   }
 
-  void _savePosition(double x, double y) async {
+  Future<void> _savePosition(double x, double y) async {
     final prefs = await SharedPreferences.getInstance();
     await prefs.setDouble('${widget.app.packageName}_x', x);
     await prefs.setDouble('${widget.app.packageName}_y', y);
@@ -295,6 +309,10 @@ class _FloatingAppIconState extends ConsumerState<FloatingAppIcon> {
         child: AppIconContent(app: widget.app),
       );
     }
+
+    final screenHeight = MediaQuery.of(context).size.height;
+    // Dynamic size scaling: Shrink to 52.0 if in the dock area (bottom 190px)
+    final double iconSize = yPos > (screenHeight - 190) ? 52.0 : 64.0;
 
     return Positioned(
       left: xPos,
@@ -344,17 +362,29 @@ class _FloatingAppIconState extends ConsumerState<FloatingAppIcon> {
         child: Draggable(
           feedback: Material(
             color: Colors.transparent,
-            child: Opacity(opacity: 0.7, child: AppIconContent(app: widget.app)),
+            child: Opacity(
+              opacity: 0.7,
+              child: AppIconContent(
+                app: widget.app,
+                showLabel: widget.showLabel,
+                size: iconSize,
+              ),
+            ),
           ),
           childWhenDragging: const SizedBox.shrink(),
-          onDragEnd: (details) {
+          onDragEnd: (details) async {
+            final RenderBox stackBox = context.findAncestorRenderObjectOfType<RenderBox>()!;
+            final localPos = stackBox.globalToLocal(details.offset);
+            
             setState(() {
-              xPos = details.offset.dx;
-              yPos = details.offset.dy;
+              xPos = localPos.dx;
+              yPos = localPos.dy;
             });
-            _savePosition(xPos, yPos);
+            widget.app.xPos = xPos;
+            widget.app.yPos = yPos;
+            await _savePosition(xPos, yPos);
           },
-          child: AppIconContent(app: widget.app),
+          child: AppIconContent(app: widget.app, showLabel: widget.showLabel, size: iconSize),
         ),
       ),
     );
@@ -363,7 +393,9 @@ class _FloatingAppIconState extends ConsumerState<FloatingAppIcon> {
 
 class AppIconContent extends ConsumerWidget {
   final AppInfo app;
-  const AppIconContent({super.key, required this.app});
+  final bool showLabel;
+  final double size;
+  const AppIconContent({super.key, required this.app, this.showLabel = true, this.size = 64.0});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -373,12 +405,12 @@ class AppIconContent extends ConsumerWidget {
 
     return processedIcon.when(
       data: (iconBytes) => iconStyle == AppIconStyle.box
-          ? StyledAppIcon(app: app, theme: theme, iconBytes: iconBytes)
-          : StyledAppIconTwo(app: app, theme: theme, iconBytes: iconBytes),
+          ? StyledAppIcon(app: app, theme: theme, iconBytes: iconBytes, showLabel: showLabel, size: size)
+          : StyledAppIconTwo(app: app, theme: theme, iconBytes: iconBytes, showLabel: showLabel, size: size),
       loading: () => const Center(child: CircularProgressIndicator()),
       error: (err, _) => iconStyle == AppIconStyle.box
-          ? StyledAppIcon(app: app, theme: theme, iconBytes: app.iconBytes)
-          : StyledAppIconTwo(app: app, theme: theme, iconBytes: app.iconBytes),
+          ? StyledAppIcon(app: app, theme: theme, iconBytes: app.iconBytes, showLabel: showLabel, size: size)
+          : StyledAppIconTwo(app: app, theme: theme, iconBytes: app.iconBytes, showLabel: showLabel, size: size),
     );
   }
 }

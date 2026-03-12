@@ -74,8 +74,8 @@ final appsProvider = FutureProvider<List<AppInfo>>((ref) async {
   // Load saved positions
   final prefs = await SharedPreferences.getInstance();
   for (var app in apps) {
-    app.xPos = prefs.getDouble('${app.packageName}_x') ?? 0.0;
-    app.yPos = prefs.getDouble('${app.packageName}_y') ?? 0.0;
+    app.xPos = prefs.getDouble('${app.packageName}_x') ?? -1.0;
+    app.yPos = prefs.getDouble('${app.packageName}_y') ?? -1.0;
   }
   return apps;
 });
@@ -87,6 +87,16 @@ class HomeAppsNotifier extends AsyncNotifier<Set<String>> {
   @override
   Future<Set<String>> build() async {
     final prefs = await SharedPreferences.getInstance();
+    
+    final hasInitialized = prefs.getBool('has_initialized_defaults') ?? false;
+    if (!hasInitialized) {
+      final allApps = await ref.watch(appsProvider.future);
+      final defaultApps = allApps.take(4).map((a) => a.packageName).toList();
+      await prefs.setStringList(_key, defaultApps);
+      await prefs.setBool('has_initialized_defaults', true);
+      return defaultApps.toSet();
+    }
+    
     final list = prefs.getStringList(_key) ?? [];
     return list.toSet();
   }
@@ -98,14 +108,21 @@ class HomeAppsNotifier extends AsyncNotifier<Set<String>> {
     if (!prefs.containsKey('${packageName}_x')) {
       await prefs.setDouble('${packageName}_x', 150.0);
       await prefs.setDouble('${packageName}_y', 300.0);
+      
+      final currentApps = ref.read(appsProvider).value;
+      if (currentApps != null) {
+        try {
+          final app = currentApps.firstWhere((a) => a.packageName == packageName);
+          app.xPos = 150.0;
+          app.yPos = 300.0;
+        } catch (_) {}
+      }
     }
 
     final current = state.value ?? {};
     final updated = {...current, packageName};
     await prefs.setStringList(_key, updated.toList());
     
-    // Refresh apps to pick up new positions
-    ref.invalidate(appsProvider);
     state = AsyncData(updated);
   }
 
@@ -131,14 +148,23 @@ class HomeAppsNotifier extends AsyncNotifier<Set<String>> {
     await prefs.setDouble('${packageName}_x', x);
     await prefs.setDouble('${packageName}_y', y);
     
+    final currentApps = ref.read(appsProvider).value;
+    if (currentApps != null) {
+      try {
+        final app = currentApps.firstWhere((a) => a.packageName == packageName);
+        app.xPos = x;
+        app.yPos = y;
+      } catch (_) {}
+    }
+    
     final current = state.value ?? {};
     if (!current.contains(packageName)) {
       final updated = {...current, packageName};
       await prefs.setStringList(_key, updated.toList());
       state = AsyncData(updated);
     } else {
-      // Just refresh the appsProvider to update positions
-      ref.invalidate(appsProvider);
+      state = AsyncData(current);
+      ref.invalidate(homeAppsListProvider);
     }
   }
 }
