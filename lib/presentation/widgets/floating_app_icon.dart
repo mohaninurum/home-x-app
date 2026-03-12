@@ -6,6 +6,7 @@ import '../../domain/app_info.dart';
 import '../providers.dart';
 import '../theme_provider.dart';
 import '../../core/mood_theme.dart';
+import '../../core/responsive_utils.dart';
 
 
 class StyledAppIcon extends StatelessWidget {
@@ -26,6 +27,7 @@ class StyledAppIcon extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final double scaledSize = size.sw(context);
     const double pulseValue = 1.0;
     final double glowSpread = theme.mood == AppMood.hologram ? 4.0 : 1.0;
     final double glowBlur = theme.mood == AppMood.hologram ? 20.0 : 10.0;
@@ -34,10 +36,10 @@ class StyledAppIcon extends StatelessWidget {
       mainAxisSize: MainAxisSize.min,
       children: [
         Container(
-          width: size,
-          height: size,
+          width: scaledSize,
+          height: scaledSize,
           decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(size * 0.25),
+            borderRadius: BorderRadius.circular(scaledSize * 0.25),
             gradient: LinearGradient(
               begin: Alignment.topLeft,
               end: Alignment.bottomRight,
@@ -71,8 +73,8 @@ class StyledAppIcon extends StatelessWidget {
               // Top-left outer rim highlight
               BoxShadow(
                 color: Colors.white.withOpacity(0.6),
-                offset: Offset(-size * 0.03, -size * 0.03),
-                blurRadius: size * 0.06,
+                offset: Offset(-scaledSize * 0.03, -scaledSize * 0.03),
+                blurRadius: scaledSize * 0.06,
               ),
             ],
             border: Border.all(
@@ -97,7 +99,7 @@ class StyledAppIcon extends StatelessWidget {
                 stops: const [0.0, 0.3, 0.7, 1.0],
               ),
             ),
-            padding: EdgeInsets.all(size * 0.18),
+            padding: EdgeInsets.all(scaledSize * 0.18),
             child: Image.memory(
               iconBytes,
               fit: BoxFit.contain,
@@ -163,6 +165,7 @@ class StyledAppIconTwo extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final double scaledSize = size.sw(context);
     const double pulseValue = 1.0;
     final double glowSpread = theme.mood == AppMood.hologram ? 4.0 : 1.0;
     final double glowBlur = theme.mood == AppMood.hologram ? 20.0 : 10.0;
@@ -201,8 +204,8 @@ class StyledAppIconTwo extends StatelessWidget {
               // Inner Highlight (Top Edge - Skeuomorphism)
               BoxShadow(
                 color: Colors.white.withOpacity(0.4),
-                offset: Offset(-size * 0.03, -size * 0.03),
-                blurRadius: size * 0.06,
+                offset: Offset(-scaledSize * 0.03, -scaledSize * 0.03),
+                blurRadius: scaledSize * 0.06,
               ),
             ],
             border: Border.all(
@@ -213,7 +216,7 @@ class StyledAppIconTwo extends StatelessWidget {
             ),
           ),
           child: Container(
-            margin: EdgeInsets.all(size * 0.12),
+            margin: EdgeInsets.all(scaledSize * 0.12),
             decoration: BoxDecoration(
               shape: BoxShape.circle,
               image: DecorationImage(
@@ -312,7 +315,7 @@ class _FloatingAppIconState extends ConsumerState<FloatingAppIcon> {
 
     final screenHeight = MediaQuery.of(context).size.height;
     // Dynamic size scaling: Shrink to 52.0 if in the dock area (bottom 190px)
-    final double iconSize = yPos > (screenHeight - 190) ? 52.0 : 64.0;
+    final double iconSize = yPos > (screenHeight - 190.sh(context)) ? 52.0.sw(context) : 64.0.sw(context);
 
     return Positioned(
       left: xPos,
@@ -359,7 +362,8 @@ class _FloatingAppIconState extends ConsumerState<FloatingAppIcon> {
             ),
           );
         },
-        child: Draggable(
+        child: Draggable<AppInfo>(
+          data: widget.app,
           feedback: Material(
             color: Colors.transparent,
             child: Opacity(

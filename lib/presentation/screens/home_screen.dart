@@ -3,6 +3,7 @@ import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import '../providers.dart';
 import '../../domain/app_info.dart';
 import '../widgets/floating_app_icon.dart';
@@ -19,6 +20,7 @@ import '../widgets/gesture_drawing_detector.dart';
 import '../widgets/app_tile_widget.dart';
 import 'app_picker_dialog.dart';
 import '../theme_provider.dart';
+import '../../core/responsive_utils.dart';
 
 class HomeScreen extends ConsumerStatefulWidget {
   const HomeScreen({super.key});
@@ -178,25 +180,40 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
                           homeAppsList,
                         );
 
-                        // Compute initial placement for unset apps
+                        // Dock app layout logic coordinates
                         final screenWidth = MediaQuery.of(context).size.width;
                         final screenHeight = MediaQuery.of(context).size.height;
+                        final dockThresholdY = screenHeight - 150.sh(context);
 
-                        final unsetApps = allFloatingApps
-                            .where((a) => a.yPos <= 0)
+                        // Capture unset apps or previously misaligned dock apps (those sitting above dock)
+                        // This absorbs any floating app near the dock into a clean layout
+                        final dockApps = allFloatingApps
+                            .where((a) => a.yPos <= 0 || a.yPos > dockThresholdY)
                             .toList();
-                        if (unsetApps.isNotEmpty) {
-                          final totalWidth =
-                              unsetApps.length * 60.0 +
-                              (unsetApps.length - 1) *
-                                  20; // 60 width + 20 margin
-                          final startX = (screenWidth - totalWidth) / 2;
-                          final dockY =
-                              screenHeight - 170.0; // Dock vertical position
 
-                          for (int i = 0; i < unsetApps.length; i++) {
-                            unsetApps[i].xPos = startX + (i * 80.0);
-                            unsetApps[i].yPos = dockY;
+                        if (dockApps.isNotEmpty) {
+                          // Sort by existing X to maintain visual order
+                          dockApps.sort((a, b) => a.xPos.compareTo(b.xPos));
+                          
+                          final dockMargin = 20.sw(context);
+                          final dockPadding = 15.sw(context);
+                          final plusBtnWidth = 55.sh(context); // Fixed circular shape
+                          final iconSize = 52.0.sw(context);
+                          
+                          // Calculate the exact center of the space dedicated for apps
+                          final appAreaStartX = dockMargin + dockPadding;
+                          final appAreaEndX = screenWidth - dockMargin - dockPadding - plusBtnWidth - 10.sw(context);
+                          final appAreaWidth = appAreaEndX - appAreaStartX;
+                          
+                          final double spacing = dockApps.length > 3 ? 10.sw(context) : 20.sw(context);
+                          final double totalWidth = dockApps.length * iconSize + (dockApps.length - 1) * spacing;
+                          
+                          final startX = appAreaStartX + (appAreaWidth - totalWidth) / 2;
+                          final dockY = screenHeight - 91.0.sh(context); // Exact vertical center of dock
+
+                          for (int i = 0; i < dockApps.length; i++) {
+                            dockApps[i].xPos = startX + (i * (iconSize + spacing));
+                            dockApps[i].yPos = dockY;
                           }
                         }
 
@@ -235,50 +252,83 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
 
                             // Bottom Dock Background and Add Button
                             Positioned(
-                              bottom: 25,
+                              bottom: 25.sh(context),
                               left: 0,
                               right: 0,
-                              child: Container(
-                                height: 80,
-                                padding: const EdgeInsets.symmetric(
-                                  vertical: 10,
-                                  horizontal: 15,
-                                ),
-                                decoration: BoxDecoration(
-                                  color: Colors.white.withAlpha(25),
-                                  borderRadius: BorderRadius.circular(25),
-                                  border: Border.all(
-                                    color: Colors.white.withAlpha(30),
-                                  ),
-                                ),
-                                margin: const EdgeInsets.symmetric(
-                                  horizontal: 20,
-                                ),
-                                child: Stack(
-                                  children: [
-                                    // Right-aligned Add Button inside Dock Background
-                                    Align(
-                                      alignment: Alignment.centerRight,
-                                      child: GestureDetector(
-                                        onTap: () =>
-                                            _showAppPicker(isWidget: false),
-                                        child: Container(
-                                          width: 55,
-                                          height: 55,
-                                          decoration: BoxDecoration(
-                                            color: Colors.white.withAlpha(40),
-                                            shape: BoxShape.circle,
-                                          ),
-                                          child: const Icon(
-                                            Icons.add,
-                                            color: Colors.white,
-                                            size: 30,
-                                          ),
-                                        ),
+                              child: DragTarget<AppInfo>(
+                                onWillAccept: (data) => data != null,
+                                onAccept: (data) async {
+                                  // Snapping logic: align to center of dock
+                                  final dockHeight = 80.sh(context);
+                                  final iconSize = 52.sw(context);
+                                  final dockTop = screenHeight - 105.sh(context);
+                                  final snappedY = dockTop + (dockHeight - iconSize) / 2;
+                                  
+                                  // Find current x position relative to screen
+                                  // For now, keep the drop xpos but snap y
+                                  // In a more advanced version, we'd calculate grid cells inside the dock
+                                  
+                                  // Since FloatingAppIcon handles its own state for dragging on home_screen currently,
+                                  // we might need to trigger a refresh or update provider.
+                                  // However, the simple fix is to ensure the app state is updated.
+                                  data.yPos = snappedY;
+                                  
+                                  // Persist
+                                  final prefs = await SharedPreferences.getInstance();
+                                  await prefs.setDouble('${data.packageName}_y', snappedY);
+                                  
+                                  // Trigger rebuild of icons
+                                  ref.invalidate(homeAppsListProvider);
+                                },
+                                builder: (context, candidateData, rejectedData) {
+                                  return Container(
+                                    height: 80.sh(context),
+                                    padding: EdgeInsets.symmetric(
+                                      vertical: 10.sh(context),
+                                      horizontal: 15.sw(context),
+                                    ),
+                                    decoration: BoxDecoration(
+                                      color: candidateData.isNotEmpty 
+                                        ? Colors.white.withAlpha(50) 
+                                        : Colors.white.withAlpha(25),
+                                      borderRadius: BorderRadius.circular(25.sw(context)),
+                                      border: Border.all(
+                                        color: candidateData.isNotEmpty
+                                          ? Colors.white.withAlpha(60)
+                                          : Colors.white.withAlpha(30),
+                                        width: candidateData.isNotEmpty ? 2.0 : 1.0,
                                       ),
                                     ),
-                                  ],
-                                ),
+                                    margin: EdgeInsets.symmetric(
+                                      horizontal: 20.sw(context),
+                                    ),
+                                    child: Stack(
+                                      children: [
+                                        // Placeholder or internal dock content could go here
+                                        Align(
+                                          alignment: Alignment.centerRight,
+                                          child: GestureDetector(
+                                            onTap: () =>
+                                                _showAppPicker(isWidget: false),
+                                            child: Container(
+                                              width: 55.sh(context),
+                                              height: 55.sh(context),
+                                              decoration: BoxDecoration(
+                                                color: Colors.white.withAlpha(40),
+                                                shape: BoxShape.circle,
+                                              ),
+                                              child: Icon(
+                                                Icons.add,
+                                                color: Colors.white,
+                                                size: 30.sh(context),
+                                              ),
+                                            ),
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  );
+                                },
                               ),
                             ),
 
@@ -442,17 +492,17 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
 
                 // Search Bar & Settings
                 Positioned(
-                  top: MediaQuery.of(context).padding.top + 10,
-                  left: 20,
-                  right: 20,
+                  top: MediaQuery.of(context).padding.top + 10.sh(context),
+                  left: 20.sw(context),
+                  right: 20.sw(context),
                   child: Row(
                     children: [
                       Expanded(
                         child: Container(
-                          height: 45,
+                          height: 45.sh(context),
                           decoration: BoxDecoration(
                             color: Colors.white.withAlpha(40),
-                            borderRadius: BorderRadius.circular(25),
+                            borderRadius: BorderRadius.circular(25.sw(context)),
                             border: Border.all(
                               color: Colors.white.withAlpha(50),
                             ),
@@ -471,19 +521,21 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
                               hintStyle: TextStyle(
                                 color: Colors.white.withAlpha(150),
                               ),
-                              prefixIcon: const Icon(
+                              prefixIcon: Icon(
                                 Icons.search,
                                 color: Colors.white70,
+                                size: 20.sw(context),
                               ),
                               border: InputBorder.none,
-                              contentPadding: const EdgeInsets.symmetric(
-                                vertical: 10,
+                              contentPadding: EdgeInsets.symmetric(
+                                vertical: 10.sh(context),
                               ),
                               suffixIcon: _isSearching
                                   ? IconButton(
-                                      icon: const Icon(
+                                      icon: Icon(
                                         Icons.close,
                                         color: Colors.white70,
+                                        size: 20.sw(context),
                                       ),
                                       onPressed: () {
                                         setState(() {
@@ -498,9 +550,13 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
                           ),
                         ),
                       ),
-                      const SizedBox(width: 10),
+                      SizedBox(width: 10.sw(context)),
                       IconButton(
-                        icon: const Icon(Icons.settings, color: Colors.white70),
+                        icon: Icon(
+                          Icons.settings,
+                          color: Colors.white70,
+                          size: 24.sw(context),
+                        ),
                         onPressed: () {
                           Navigator.pushNamed(context, '/settings');
                         },
@@ -600,13 +656,13 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
                     ),
                   ),
                 Positioned(
-                  top: MediaQuery.of(context).padding.top + 10,
-                  right: 16,
+                  top: MediaQuery.of(context).padding.top + 10.sh(context),
+                  right: 16.sw(context),
                   child: IconButton(
-                    icon: const Icon(
+                    icon: Icon(
                       Icons.settings,
                       color: Colors.white,
-                      size: 30,
+                      size: 30.sw(context),
                     ),
                     onPressed: () {
                       Navigator.push(
