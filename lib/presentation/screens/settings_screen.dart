@@ -5,6 +5,7 @@ import 'package:image_picker/image_picker.dart';
 import '../../core/mood_theme.dart';
 import '../theme_provider.dart';
 import '../providers.dart';
+import '../../core/responsive_utils.dart';
 
 class SettingsScreen extends ConsumerWidget {
   const SettingsScreen({super.key});
@@ -31,19 +32,19 @@ class SettingsScreen extends ConsumerWidget {
         elevation: 0,
       ),
       body: ListView(
-        padding: const EdgeInsets.all(16.0),
+        padding: EdgeInsets.all(16.0.sw(context)),
         children: [
           // Theme Selection Section
           Text(
             'APPEARANCE',
             style: TextStyle(
               color: theme.primaryColor.withOpacity(0.7),
-              fontSize: 12,
+              fontSize: 12.wsp(context),
               fontWeight: FontWeight.bold,
-              letterSpacing: 1.5,
+              letterSpacing: 1.5.sw(context),
             ),
           ),
-          const SizedBox(height: 8),
+          SizedBox(height: 8.sh(context)),
           Container(
             decoration: BoxDecoration(
               color: theme.primaryColor.withOpacity(0.05),
@@ -60,7 +61,7 @@ class SettingsScreen extends ConsumerWidget {
                   ),
                   title: Text(
                     currentMoodTheme.title,
-                    style: TextStyle(color: theme.primaryColor),
+                    style: TextStyle(color: theme.primaryColor, fontSize: 16.wsp(context)),
                   ),
                   trailing: isSelected
                       ? Icon(Icons.check, color: theme.secondaryColor)
@@ -75,26 +76,26 @@ class SettingsScreen extends ConsumerWidget {
             ),
           ),
 
-          const SizedBox(height: 24),
+          SizedBox(height: 24.sh(context)),
 
           // Icon Style Selection Section
           Text(
             'ICON STYLE',
             style: TextStyle(
               color: theme.primaryColor.withOpacity(0.7),
-              fontSize: 12,
+              fontSize: 12.wsp(context),
               fontWeight: FontWeight.bold,
-              letterSpacing: 1.5,
+              letterSpacing: 1.5.sw(context),
             ),
           ),
-          const SizedBox(height: 8),
+          SizedBox(height: 8.sh(context)),
           ref
               .watch(iconStyleProvider)
               .when(
                 data: (currentStyle) => Container(
                   decoration: BoxDecoration(
                     color: theme.primaryColor.withOpacity(0.05),
-                    borderRadius: BorderRadius.circular(12),
+                    borderRadius: BorderRadius.circular(12.sw(context)),
                     border: Border.all(
                       color: theme.primaryColor.withOpacity(0.2),
                     ),
@@ -113,7 +114,7 @@ class SettingsScreen extends ConsumerWidget {
                           style == AppIconStyle.box
                               ? '3D Box (StyledAppIcon)'
                               : 'Circle (StyledAppIconTwo)',
-                          style: TextStyle(color: theme.primaryColor),
+                          style: TextStyle(color: theme.primaryColor, fontSize: 16.wsp(context)),
                         ),
                         trailing: isSelected
                             ? Icon(
@@ -135,7 +136,7 @@ class SettingsScreen extends ConsumerWidget {
                 error: (err, stack) => Text('Error loading style: $err'),
               ),
 
-          const SizedBox(height: 24),
+          SizedBox(height: 24.sh(context)),
 
           // ── Wallpaper Section ─────────────────────────────────────────
           Text(
@@ -147,7 +148,7 @@ class SettingsScreen extends ConsumerWidget {
               letterSpacing: 1.5,
             ),
           ),
-          const SizedBox(height: 8),
+          SizedBox(height: 8.sh(context)),
           Container(
             decoration: BoxDecoration(
               color: theme.primaryColor.withOpacity(0.05),
@@ -159,11 +160,11 @@ class SettingsScreen extends ConsumerWidget {
                 // Current wallpaper preview
                 if (wallpaperPath != null)
                   ClipRRect(
-                    borderRadius: const BorderRadius.vertical(
-                      top: Radius.circular(12),
+                    borderRadius: BorderRadius.vertical(
+                      top: Radius.circular(12.sw(context)),
                     ),
                     child: SizedBox(
-                      height: 120,
+                      height: 120.sh(context),
                       width: double.infinity,
                       child: Image.file(
                         File(wallpaperPath),
@@ -181,13 +182,13 @@ class SettingsScreen extends ConsumerWidget {
                     wallpaperPath != null
                         ? 'Change Wallpaper'
                         : 'Set Wallpaper',
-                    style: TextStyle(color: theme.primaryColor),
+                    style: TextStyle(color: theme.primaryColor, fontSize: 16.wsp(context)),
                   ),
                   subtitle: Text(
                     'Applied to Home Screen & App Drawer',
                     style: TextStyle(
                       color: theme.primaryColor.withOpacity(0.6),
-                      fontSize: 12,
+                      fontSize: 12.wsp(context),
                     ),
                   ),
                   trailing: Icon(
@@ -215,7 +216,7 @@ class SettingsScreen extends ConsumerWidget {
             ),
           ),
 
-          const SizedBox(height: 24),
+          SizedBox(height: 24.sh(context)),
 
           // System Settings Section
           Text(
@@ -227,7 +228,7 @@ class SettingsScreen extends ConsumerWidget {
               letterSpacing: 1.5,
             ),
           ),
-          const SizedBox(height: 8),
+          SizedBox(height: 8.sh(context)),
           Container(
             decoration: BoxDecoration(
               color: theme.primaryColor.withOpacity(0.05),
@@ -238,7 +239,7 @@ class SettingsScreen extends ConsumerWidget {
               leading: Icon(Icons.home_filled, color: theme.primaryColor),
               title: Text(
                 'Set Default Launcher',
-                style: TextStyle(color: theme.primaryColor),
+                style: TextStyle(color: theme.primaryColor, fontSize: 16.wsp(context)),
               ),
               subtitle: Text(
                 'Make Home-X your main home screen',
@@ -250,7 +251,7 @@ class SettingsScreen extends ConsumerWidget {
               trailing: Icon(
                 Icons.arrow_forward_ios,
                 color: theme.primaryColor,
-                size: 16,
+                size: 16.sw(context),
               ),
               onTap: () {
                 ref
@@ -260,7 +261,7 @@ class SettingsScreen extends ConsumerWidget {
             ),
           ),
 
-          const SizedBox(height: 12),
+          SizedBox(height: 12.sh(context)),
 
           // Heart Animation Toggle
           Container(
@@ -276,13 +277,13 @@ class SettingsScreen extends ConsumerWidget {
                   secondary: Icon(Icons.favorite, color: theme.primaryColor),
                   title: Text(
                     'Heart Animation',
-                    style: TextStyle(color: theme.primaryColor),
+                    style: TextStyle(color: theme.primaryColor, fontSize: 16.wsp(context)),
                   ),
                   subtitle: Text(
                     'Show floating hearts on Home Screen',
                     style: TextStyle(
                       color: theme.primaryColor.withOpacity(0.7),
-                      fontSize: 12,
+                      fontSize: 12.wsp(context),
                     ),
                   ),
                   value: showHearts,
@@ -316,7 +317,7 @@ class SettingsScreen extends ConsumerWidget {
               leading: Icon(Icons.info_outline, color: theme.primaryColor),
               title: Text(
                 'Home-X App',
-                style: TextStyle(color: theme.primaryColor),
+                style: TextStyle(color: theme.primaryColor, fontSize: 16.wsp(context)),
               ),
               subtitle: Text(
                 'Version 1.0.0',

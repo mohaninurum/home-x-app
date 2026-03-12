@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'dart:async';
+import '../../core/responsive_utils.dart';
 
 class RomanticClockWidget extends StatefulWidget {
   const RomanticClockWidget({super.key});
@@ -36,13 +37,13 @@ class _RomanticClockWidgetState extends State<RomanticClockWidget> {
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 15),
+      padding: EdgeInsets.symmetric(horizontal: 20.sw(context), vertical: 15.sw(context)),
       decoration: BoxDecoration(
         color: Colors.white.withOpacity(0.15),
-        borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: Theme.of(context).primaryColor.withOpacity(0.3), width: 1.5),
-        boxShadow: const [
-           BoxShadow(color: Colors.black12, blurRadius: 10, offset: Offset(0, 5))
+        borderRadius: BorderRadius.circular(20.sw(context)),
+        border: Border.all(color: Theme.of(context).primaryColor.withOpacity(0.3), width: 1.5.sw(context)),
+        boxShadow: [
+           BoxShadow(color: Colors.black12, blurRadius: 10.sw(context), offset: Offset(0, 5.sw(context)))
         ],
       ),
       child: Column(
@@ -50,19 +51,19 @@ class _RomanticClockWidgetState extends State<RomanticClockWidget> {
         children: [
           Text(
             "${_formatTime(_now.hour)}:${_formatTime(_now.minute)}",
-            style: const TextStyle(
-              fontSize: 48,
+            style: TextStyle(
+              fontSize: 48.wsp(context),
               fontWeight: FontWeight.w300,
               color: Colors.white,
-              letterSpacing: 2.0,
-              shadows: [Shadow(color: Colors.pinkAccent, blurRadius: 15)],
+              letterSpacing: 2.0.sw(context),
+              shadows: [Shadow(color: Colors.pinkAccent, blurRadius: 15.sw(context))],
             ),
           ),
-          const SizedBox(height: 5),
-          const Text(
+          SizedBox(height: 5.sw(context)),
+          Text(
             "Time spent loving you.",
             style: TextStyle(
-              fontSize: 12,
+              fontSize: 12.wsp(context),
               fontStyle: FontStyle.italic,
               color: Colors.white70,
             ),
