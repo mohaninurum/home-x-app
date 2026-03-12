@@ -10,7 +10,9 @@ import '../../core/mood_theme.dart';
 import '../../domain/app_info.dart';
 
 class LoveAppDrawer extends ConsumerWidget {
-  const LoveAppDrawer({super.key});
+  final VoidCallback? onClose;
+
+  const LoveAppDrawer({super.key, this.onClose});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -28,6 +30,10 @@ class LoveAppDrawer extends ConsumerWidget {
         backgroundColor: wallpaperPath != null ? Colors.black54 : theme.primaryColor,
         elevation: 0,
         iconTheme: const IconThemeData(color: Colors.white),
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back),
+          onPressed: onClose,
+        ),
       ),
       body: Stack(
         children: [
@@ -69,43 +75,43 @@ class LoveAppDrawer extends ConsumerWidget {
               final app = apps[index];
               final isOnHome = homeApps.contains(app.packageName);
 
-              return LongPressDraggable<AppInfo>(
-                data: app,
-                feedback: Material(
-                  color: Colors.transparent,
-                  child: Opacity(
-                    opacity: 0.7,
-                    child: SizedBox(
-                      width: 80,
-                      height: 80,
-                      child: AppIconContent(app: app),
+              return InkWell(
+                onTap: () {
+                  nativeService.launchApp(app.packageName);
+                },
+                onLongPress: () {
+                  ref
+                      .read(homeAppsProvider.notifier)
+                      .toggleApp(app.packageName);
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                      content: Text(
+                        isOnHome ? 'Removed from Home' : 'Added to Home',
+                      ),
+                      backgroundColor: theme.primaryColor,
+                      duration: const Duration(seconds: 1),
+                    ),
+                  );
+                },
+                child: LongPressDraggable<AppInfo>(
+                  data: app,
+                  feedback: Material(
+                    color: Colors.transparent,
+                    child: Opacity(
+                      opacity: 0.7,
+                      child: SizedBox(
+                        width: 80,
+                        height: 80,
+                        child: AppIconContent(app: app),
+                      ),
                     ),
                   ),
-                ),
-                childWhenDragging: Opacity(
-                  opacity: 0.3,
-                  child: AppIconContent(app: app),
-                ),
-                onDragStarted: () {
-                  // Optional: Hide drawer or notify home screen
-                },
-                child: InkWell(
-                  onTap: () {
-                    nativeService.launchApp(app.packageName);
-                  },
-                  onLongPress: () {
-                    ref
-                        .read(homeAppsProvider.notifier)
-                        .toggleApp(app.packageName);
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(
-                        content: Text(
-                          isOnHome ? 'Removed from Home' : 'Added to Home',
-                        ),
-                        backgroundColor: theme.primaryColor,
-                        duration: const Duration(seconds: 1),
-                      ),
-                    );
+                  childWhenDragging: Opacity(
+                    opacity: 0.3,
+                    child: AppIconContent(app: app),
+                  ),
+                  onDragStarted: () {
+                    // Optional: Hide drawer or notify home screen
                   },
                   child: Stack(
                     alignment: Alignment.center,

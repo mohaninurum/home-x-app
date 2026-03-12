@@ -1,3 +1,4 @@
+import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../providers.dart';
@@ -12,74 +13,140 @@ class AppPickerDialog extends ConsumerWidget {
     final appsAsync = ref.watch(appsProvider);
     final theme = ref.watch(themeMoodProvider);
 
-    return Container(
-      padding: const EdgeInsets.symmetric(vertical: 20, horizontal: 16),
-      decoration: BoxDecoration(
-        color: theme.backgroundColor,
-        borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
-      ),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Container(
-            width: 40,
-            height: 4,
-            decoration: BoxDecoration(
-              color: theme.primaryColor.withOpacity(0.3),
-              borderRadius: BorderRadius.circular(2),
+    return ClipRRect(
+      borderRadius: const BorderRadius.vertical(top: Radius.circular(32)),
+      child: BackdropFilter(
+        filter: ImageFilter.blur(sigmaX: 15, sigmaY: 15),
+        child: Container(
+          decoration: BoxDecoration(
+            color: theme.backgroundColor.withOpacity(0.7),
+            borderRadius: const BorderRadius.vertical(top: Radius.circular(32)),
+            border: Border.all(
+              color: Colors.white.withOpacity(0.2),
+              width: 1.5,
             ),
+            boxShadow: [
+              BoxShadow(color: Colors.black.withOpacity(0.2), blurRadius: 20),
+            ],
           ),
-          const SizedBox(height: 20),
-          Text(
-            'Select App for Widget',
-            style: TextStyle(
-              color: theme.primaryColor,
-              fontSize: 18,
-              fontWeight: FontWeight.bold,
-            ),
-          ),
-          const SizedBox(height: 16),
-          SizedBox(
-            height: 400,
-            child: appsAsync.when(
-              data: (apps) => GridView.builder(
-                gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                  crossAxisCount: 4,
-                  mainAxisSpacing: 16,
-                  crossAxisSpacing: 16,
-                  childAspectRatio: 0.8,
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              // premium Header
+              Container(
+                padding: const EdgeInsets.only(top: 12, bottom: 20),
+                width: double.infinity,
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                    colors: [
+                      theme.primaryColor.withOpacity(0.3),
+                      theme.secondaryColor.withOpacity(0.1),
+                    ],
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                  ),
                 ),
-                itemCount: apps.length,
-                itemBuilder: (context, index) {
-                  final app = apps[index];
-                  return GestureDetector(
-                    onTap: () {
-                      Navigator.pop(context, app.packageName);
-                    },
-                    child: Column(
-                      children: [
-                        Expanded(child: AppIconContent(app: app)),
-                        const SizedBox(height: 4),
-                        Text(
-                          app.label,
-                          style: TextStyle(
-                            color: theme.primaryColor,
-                            fontSize: 10,
-                          ),
-                          textAlign: TextAlign.center,
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                        ),
-                      ],
+                child: Column(
+                  children: [
+                    Container(
+                      width: 40,
+                      height: 4,
+                      decoration: BoxDecoration(
+                        color: Colors.white.withOpacity(0.6),
+                        borderRadius: BorderRadius.circular(10),
+                      ),
                     ),
-                  );
-                },
+                    const SizedBox(height: 16),
+                    ShaderMask(
+                      shaderCallback: (bounds) => LinearGradient(
+                        colors: [
+                          theme.primaryColor,
+                          Colors.white,
+                          theme.secondaryColor,
+                        ],
+                      ).createShader(bounds),
+                      child: const Text(
+                        'Choose Your App ✨',
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontSize: 24,
+                          fontWeight: FontWeight.w800,
+                          letterSpacing: 0.8,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
               ),
-              loading: () => const Center(child: CircularProgressIndicator()),
-              error: (err, _) => Center(child: Text('Error: $err')),
-            ),
+
+              // App Grid
+              Flexible(
+                child: SizedBox(
+                  height: 480, // Allow dynamic height but cap it
+                  child: appsAsync.when(
+                    data: (apps) {
+                      return GridView.builder(
+                        padding: const EdgeInsets.fromLTRB(24, 0, 24, 40),
+                        physics: const BouncingScrollPhysics(),
+                        gridDelegate:
+                            const SliverGridDelegateWithFixedCrossAxisCount(
+                              crossAxisCount: 4,
+                              mainAxisSpacing: 10,
+                              crossAxisSpacing: 10,
+                              childAspectRatio: 0.75, // Taller cells for text
+                            ),
+                        itemCount: apps.length,
+                        itemBuilder: (context, index) {
+                          final app = apps[index];
+                          return TweenAnimationBuilder<double>(
+                            duration: Duration(
+                              milliseconds: 400 + (index % 12 * 40),
+                            ),
+                            tween: Tween(begin: 0.0, end: 1.0),
+                            curve: Curves.easeOutQuart,
+                            builder: (context, value, child) {
+                              return Transform.translate(
+                                offset: Offset(0, 20 * (1 - value)),
+                                child: Opacity(
+                                  opacity: value.clamp(0.0, 1.0),
+                                  child: child,
+                                ),
+                              );
+                            },
+                            child: GestureDetector(
+                              onTap: () =>
+                                  Navigator.pop(context, app.packageName),
+                              child: Column(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  SizedBox(height: 10),
+                                  Expanded(child: AppIconContent(app: app)),
+                                  // Slightly tighter spacing
+                                ],
+                              ),
+                            ),
+                          );
+                        },
+                      );
+                    },
+                    loading: () => Center(
+                      child: CircularProgressIndicator(
+                        color: theme.primaryColor,
+                        strokeWidth: 3,
+                      ),
+                    ),
+                    error: (err, _) => Center(
+                      child: Text(
+                        'Failed to load apps: $err',
+                        style: const TextStyle(color: Colors.redAccent),
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+            ],
           ),
-        ],
+        ),
       ),
     );
   }

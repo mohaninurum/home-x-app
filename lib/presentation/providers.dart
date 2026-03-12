@@ -93,9 +93,19 @@ class HomeAppsNotifier extends AsyncNotifier<Set<String>> {
 
   Future<void> addApp(String packageName) async {
     final prefs = await SharedPreferences.getInstance();
+    
+    // Assign a default position if not set
+    if (!prefs.containsKey('${packageName}_x')) {
+      await prefs.setDouble('${packageName}_x', 150.0);
+      await prefs.setDouble('${packageName}_y', 300.0);
+    }
+
     final current = state.value ?? {};
     final updated = {...current, packageName};
     await prefs.setStringList(_key, updated.toList());
+    
+    // Refresh apps to pick up new positions
+    ref.invalidate(appsProvider);
     state = AsyncData(updated);
   }
 

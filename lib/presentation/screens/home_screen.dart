@@ -70,6 +70,12 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with SingleTickerProvid
     return Scaffold(
       body: PopScope(
         canPop: false,
+        onPopInvokedWithResult: (didPop, result) {
+          if (didPop) return;
+          if (_drawerController.isCompleted) {
+            _toggleDrawer();
+          }
+        },
         child: DragTarget<AppInfo>(
         onAcceptWithDetails: (details) {
           final renderBox = context.findRenderObject() as RenderBox;
@@ -244,7 +250,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with SingleTickerProvid
                                   
                                   // Add Button
                                   GestureDetector(
-                                    onTap: _toggleDrawer,
+                                    onTap: () => _showAppPicker(isWidget: false),
                                     child: Container(
                                       width: 55,
                                       height: 55,
@@ -304,7 +310,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with SingleTickerProvid
                               left: _lastLongPressPos.dx - 60,
                               top: _lastLongPressPos.dy - 25,
                               child: GestureDetector(
-                                onTap: _showAppPicker,
+                                onTap: () => _showAppPicker(isWidget: true),
                                 child: Container(
                                   padding: const EdgeInsets.symmetric(
                                     horizontal: 16,
@@ -402,10 +408,9 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with SingleTickerProvid
                 ),
               ),
                 
-              // Drawer Overlay
               SlideTransition(
                 position: _drawerOffset,
-                child: const LoveAppDrawer(),
+                child: LoveAppDrawer(onClose: _toggleDrawer),
               ),
             ],
           );
@@ -415,46 +420,49 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with SingleTickerProvid
   );
 }
 
-void _showAppPicker() async {
-  final packageName = await showModalBottomSheet<String>(
-    context: context,
-    backgroundColor: Colors.transparent,
-    builder: (context) => const AppPickerDialog(),
-  );
+  void _showAppPicker({required bool isWidget}) async {
+    final packageName = await showModalBottomSheet<String>(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (context) => const AppPickerDialog(),
+    );
 
-  if (packageName != null) {
-    String? photoPath;
-    
-    // Check if it's a photos app to prompt for an image
-    final apps = ref.read(appsProvider).value ?? [];
-    final app = apps.firstWhere((a) => a.packageName == packageName);
-    final isPhotos = app.label.toLowerCase().contains('photo') ||
-        app.packageName.toLowerCase().contains('gallery') ||
-        app.packageName.toLowerCase().contains('photos');
-
-    if (isPhotos) {
-      final picker = ImagePicker();
-      final pickedFile = await picker.pickImage(source: ImageSource.gallery);
-      if (pickedFile != null) {
-        photoPath = pickedFile.path;
-      } else {
-        // If they cancel photo picking, maybe don't add the widget or add without photo?
-        // Let's add it without photo (it will show app icon in frame) but it's better to show photo.
-        // User said "where the photo appears", so let's require it or just proceed.
+    if (packageName != null) {
+      if (!isWidget) {
+        // Simple app addition
+        ref.read(homeAppsProvider.notifier).addApp(packageName);
+        return;
       }
-    }
 
-    ref.read(homeWidgetsProvider.notifier).addWidget(
-          packageName,
-          _lastLongPressPos.dx - 80,
-          _lastLongPressPos.dy - 80,
-          imagePath: photoPath,
-        );
-    setState(() {
-      _showAddWidgetButton = false;
-    });
+      String? photoPath;
+      
+      // Check if it's a photos app to prompt for an image
+      final apps = ref.read(appsProvider).value ?? [];
+      final app = apps.firstWhere((a) => a.packageName == packageName);
+      final isPhotos = app.label.toLowerCase().contains('photo') ||
+          app.packageName.toLowerCase().contains('gallery') ||
+          app.packageName.toLowerCase().contains('photos');
+
+      if (isPhotos) {
+        final picker = ImagePicker();
+        final pickedFile = await picker.pickImage(source: ImageSource.gallery);
+        if (pickedFile != null) {
+          photoPath = pickedFile.path;
+        }
+      }
+
+      ref.read(homeWidgetsProvider.notifier).addWidget(
+            packageName,
+            _lastLongPressPos.dx - 80,
+            _lastLongPressPos.dy - 80,
+            imagePath: photoPath,
+          );
+      setState(() {
+        _showAddWidgetButton = false;
+      });
+    }
   }
-}
 
 void _showWidgetOptions(String id) {
   showModalBottomSheet(
