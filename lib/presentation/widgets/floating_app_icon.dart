@@ -3,18 +3,19 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'dart:typed_data';
 import '../../domain/app_info.dart';
+import '../../domain/icon_customization.dart';
 import '../providers.dart';
 import '../theme_provider.dart';
 import '../../core/mood_theme.dart';
 import '../../core/responsive_utils.dart';
 
-
-class StyledAppIcon extends StatelessWidget {
+class StyledAppIcon extends ConsumerWidget {
   final AppInfo app;
   final MoodTheme theme;
   final Uint8List iconBytes;
   final bool showLabel;
   final double size;
+  final bool isDefaultApp;
 
   const StyledAppIcon({
     super.key,
@@ -23,14 +24,23 @@ class StyledAppIcon extends StatelessWidget {
     required this.iconBytes,
     this.showLabel = true,
     this.size = 64.0,
+    this.isDefaultApp = false,
   });
 
   @override
-  Widget build(BuildContext context) {
-    final double scaledSize = size.sw(context);
+  Widget build(BuildContext context, WidgetRef ref) {
+    final customization = ref.watch(iconCustomizationProvider).value ?? const IconCustomization();
+    final double customSize = isDefaultApp ? size : (size * customization.sizeMultiplier);
+    final double scaledSize = customSize.sw(context);
+    
+    // Calculate pulse, glow, and shadows with custom multipliers
     const double pulseValue = 1.0;
-    final double glowSpread = theme.mood == AppMood.hologram ? 4.0 : 1.0;
-    final double glowBlur = theme.mood == AppMood.hologram ? 20.0 : 10.0;
+    final double shadowMult = customization.shadowMultiplier;
+    final double glowSpread = (theme.mood == AppMood.hologram ? 4.0 : 1.0) * shadowMult;
+    final double glowBlur = (theme.mood == AppMood.hologram ? 20.0 : 10.0) * shadowMult;
+    
+    // Border Radius with customization factor
+    final double borderRadiusVal = scaledSize * 0.25 * customization.borderRadiusMultiplier;
 
     return Column(
       mainAxisSize: MainAxisSize.min,
@@ -39,16 +49,21 @@ class StyledAppIcon extends StatelessWidget {
           width: scaledSize,
           height: scaledSize,
           decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(scaledSize * 0.25),
-            gradient: LinearGradient(
-              begin: Alignment.topLeft,
-              end: Alignment.bottomRight,
-              colors: [
-                theme.primaryColor.withOpacity(0.6),
-                theme.backgroundColor,
-                theme.secondaryColor.withOpacity(0.2),
-              ],
-            ),
+            borderRadius: BorderRadius.circular(borderRadiusVal),
+            color: customization.backgroundColorValue != null 
+                ? Color(customization.backgroundColorValue!)
+                : null,
+            gradient: customization.backgroundColorValue == null
+              ? LinearGradient(
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                  colors: [
+                    theme.primaryColor.withOpacity(0.6),
+                    theme.backgroundColor,
+                    theme.secondaryColor.withOpacity(0.2),
+                  ],
+                )
+              : null,
             boxShadow: [
               // Outer Glow (Hologram style)
               BoxShadow(
@@ -61,20 +76,20 @@ class StyledAppIcon extends StatelessWidget {
               // Ambient 3D Drop shadow
               BoxShadow(
                 color: Colors.black.withOpacity(0.5),
-                offset: Offset(size * 0.09, size * 0.15),
-                blurRadius: size * 0.23,
+                offset: Offset(customSize * 0.09, customSize * 0.15) * shadowMult,
+                blurRadius: customSize * 0.23 * shadowMult,
               ),
               // Sharp ground contact shadow
               BoxShadow(
                 color: Colors.black.withOpacity(0.4),
-                offset: Offset(size * 0.03, size * 0.05),
-                blurRadius: size * 0.06,
+                offset: Offset(customSize * 0.03, customSize * 0.05) * shadowMult,
+                blurRadius: customSize * 0.06 * shadowMult,
               ),
               // Top-left outer rim highlight
               BoxShadow(
                 color: Colors.white.withOpacity(0.6),
-                offset: Offset(-scaledSize * 0.03, -scaledSize * 0.03),
-                blurRadius: scaledSize * 0.06,
+                offset: Offset(-scaledSize * 0.03, -scaledSize * 0.03) * shadowMult,
+                blurRadius: scaledSize * 0.06 * shadowMult,
               ),
             ],
             border: Border.all(
@@ -86,7 +101,7 @@ class StyledAppIcon extends StatelessWidget {
           ),
           child: Container(
             decoration: BoxDecoration(
-              borderRadius: BorderRadius.circular(size * 0.22),
+              borderRadius: BorderRadius.circular(customSize * 0.22 * customization.borderRadiusMultiplier),
               gradient: LinearGradient(
                 begin: Alignment.topLeft,
                 end: Alignment.bottomRight,
@@ -108,37 +123,39 @@ class StyledAppIcon extends StatelessWidget {
           ),
         ),
         if (showLabel) ...[
-          const SizedBox(height: 8),
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 2),
-            decoration: theme.mood == AppMood.hologram
-                ? BoxDecoration(
-                    color: Colors.black26,
-                    borderRadius: BorderRadius.circular(4),
-                    border: Border.all(
-                      color: theme.primaryColor.withOpacity(0.3),
-                      width: 0.5,
-                    ),
-                  )
-                : null,
-            child: Text(
-              app.label,
-              style: TextStyle(
-                color: theme.mood == AppMood.hologram
-                    ? theme.primaryColor
-                    : Colors.black87,
-                fontSize: 10,
-                fontWeight: FontWeight.bold,
-                shadows: [
-                  Shadow(color: theme.backgroundColor, blurRadius: 2),
-                  if (theme.mood == AppMood.hologram)
-                    Shadow(
-                      color: theme.primaryColor.withOpacity(0.5),
-                      blurRadius: 8,
-                    ),
-                ],
+          SizedBox(height: 8 * (isDefaultApp ? 1.0 : customization.spacingMultiplier)),
+          Flexible(
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 2),
+              decoration: theme.mood == AppMood.hologram
+                  ? BoxDecoration(
+                      color: Colors.black26,
+                      borderRadius: BorderRadius.circular(4),
+                      border: Border.all(
+                        color: theme.primaryColor.withOpacity(0.3),
+                        width: 0.5,
+                      ),
+                    )
+                  : null,
+              child: Text(
+                app.label,
+                style: TextStyle(
+                  color: theme.mood == AppMood.hologram
+                      ? theme.primaryColor
+                      : Colors.black87,
+                  fontSize: 10 * (isDefaultApp ? 1.0 : customization.textSizeMultiplier),
+                  fontWeight: FontWeight.bold,
+                  shadows: [
+                    Shadow(color: theme.backgroundColor, blurRadius: 2),
+                    if (theme.mood == AppMood.hologram)
+                      Shadow(
+                        color: theme.primaryColor.withOpacity(0.5),
+                        blurRadius: 8,
+                      ),
+                  ],
+                ),
+                overflow: TextOverflow.ellipsis,
               ),
-              overflow: TextOverflow.ellipsis,
             ),
           ),
         ],
@@ -147,12 +164,13 @@ class StyledAppIcon extends StatelessWidget {
   }
 }
 
-class StyledAppIconTwo extends StatelessWidget {
+class StyledAppIconTwo extends ConsumerWidget {
   final AppInfo app;
   final MoodTheme theme;
   final Uint8List iconBytes;
   final bool showLabel;
   final double size;
+  final bool isDefaultApp;
 
   const StyledAppIconTwo({
     super.key,
@@ -161,31 +179,42 @@ class StyledAppIconTwo extends StatelessWidget {
     required this.iconBytes,
     this.showLabel = true,
     this.size = 64.0,
+    this.isDefaultApp = false,
   });
 
   @override
-  Widget build(BuildContext context) {
-    final double scaledSize = size.sw(context);
+  Widget build(BuildContext context, WidgetRef ref) {
+    final customization = ref.watch(iconCustomizationProvider).value ?? const IconCustomization();
+    final double customSize = isDefaultApp ? size : (size * customization.sizeMultiplier);
+    final double scaledSize = customSize.sw(context);
+    
+    // Calculate pulse, glow, and shadows with custom multipliers
     const double pulseValue = 1.0;
-    final double glowSpread = theme.mood == AppMood.hologram ? 4.0 : 1.0;
-    final double glowBlur = theme.mood == AppMood.hologram ? 20.0 : 10.0;
+    final double shadowMult = customization.shadowMultiplier;
+    final double glowSpread = (theme.mood == AppMood.hologram ? 4.0 : 1.0) * shadowMult;
+    final double glowBlur = (theme.mood == AppMood.hologram ? 20.0 : 10.0) * shadowMult;
 
     return Column(
       mainAxisSize: MainAxisSize.min,
       children: [
         Container(
-          width: size,
-          height: size,
+          width: scaledSize,
+          height: scaledSize,
           decoration: BoxDecoration(
             shape: BoxShape.circle,
-            gradient: LinearGradient(
-              begin: Alignment.topLeft,
-              end: Alignment.bottomRight,
-              colors: [
-                theme.primaryColor.withOpacity(0.4),
-                theme.secondaryColor.withOpacity(0.1),
-              ],
-            ),
+            color: customization.backgroundColorValue != null 
+                ? Color(customization.backgroundColorValue!)
+                : null,
+            gradient: customization.backgroundColorValue == null
+              ? LinearGradient(
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                  colors: [
+                    theme.primaryColor.withOpacity(0.4),
+                    theme.secondaryColor.withOpacity(0.1),
+                  ],
+                )
+              : null,
             boxShadow: [
               // Outer Glow (Hologram style)
               BoxShadow(
@@ -198,14 +227,14 @@ class StyledAppIconTwo extends StatelessWidget {
               // Bottom Shadow (Depth/Skeuomorphism)
               BoxShadow(
                 color: Colors.black.withOpacity(0.3),
-                offset: Offset(size * 0.06, size * 0.06),
-                blurRadius: size * 0.12,
+                offset: Offset(customSize * 0.06, customSize * 0.06) * shadowMult,
+                blurRadius: customSize * 0.12 * shadowMult,
               ),
               // Inner Highlight (Top Edge - Skeuomorphism)
               BoxShadow(
                 color: Colors.white.withOpacity(0.4),
-                offset: Offset(-scaledSize * 0.03, -scaledSize * 0.03),
-                blurRadius: scaledSize * 0.06,
+                offset: Offset(-scaledSize * 0.03, -scaledSize * 0.03) * shadowMult,
+                blurRadius: scaledSize * 0.06 * shadowMult,
               ),
             ],
             border: Border.all(
@@ -227,37 +256,39 @@ class StyledAppIconTwo extends StatelessWidget {
           ),
         ),
         if (showLabel) ...[
-          const SizedBox(height: 8),
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 2),
-            decoration: theme.mood == AppMood.hologram
-                ? BoxDecoration(
-                    color: Colors.black26,
-                    borderRadius: BorderRadius.circular(4),
-                    border: Border.all(
-                      color: theme.primaryColor.withOpacity(0.3),
-                      width: 0.5,
-                    ),
-                  )
-                : null,
-            child: Text(
-              app.label,
-              style: TextStyle(
-                color: theme.mood == AppMood.hologram
-                    ? theme.primaryColor
-                    : Colors.black87,
-                fontSize: 10,
-                fontWeight: FontWeight.bold,
-                shadows: [
-                  Shadow(color: theme.backgroundColor, blurRadius: 2),
-                  if (theme.mood == AppMood.hologram)
-                    Shadow(
-                      color: theme.primaryColor.withOpacity(0.5),
-                      blurRadius: 8,
-                    ),
-                ],
+          SizedBox(height: 8 * (isDefaultApp ? 1.0 : customization.spacingMultiplier)),
+          Flexible(
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 2),
+              decoration: theme.mood == AppMood.hologram
+                  ? BoxDecoration(
+                      color: Colors.black26,
+                      borderRadius: BorderRadius.circular(4),
+                      border: Border.all(
+                        color: theme.primaryColor.withOpacity(0.3),
+                        width: 0.5,
+                      ),
+                    )
+                  : null,
+              child: Text(
+                app.label,
+                style: TextStyle(
+                  color: theme.mood == AppMood.hologram
+                      ? theme.primaryColor
+                      : Colors.black87,
+                  fontSize: 10 * (isDefaultApp ? 1.0 : customization.textSizeMultiplier),
+                  fontWeight: FontWeight.bold,
+                  shadows: [
+                    Shadow(color: theme.backgroundColor, blurRadius: 2),
+                    if (theme.mood == AppMood.hologram)
+                      Shadow(
+                        color: theme.primaryColor.withOpacity(0.5),
+                        blurRadius: 8,
+                      ),
+                  ],
+                ),
+                overflow: TextOverflow.ellipsis,
               ),
-              overflow: TextOverflow.ellipsis,
             ),
           ),
         ],
@@ -314,8 +345,9 @@ class _FloatingAppIconState extends ConsumerState<FloatingAppIcon> {
     }
 
     final screenHeight = MediaQuery.of(context).size.height;
-    // Dynamic size scaling: Shrink to 52.0 if in the dock area (bottom 190px)
-    final double iconSize = yPos > (screenHeight - 190.sh(context)) ? 52.0.sw(context) : 64.0.sw(context);
+    // Dynamic size scaling: Shrink to 52.0 if in the dock area (bottom 150px)
+    final bool isDocked = yPos > (screenHeight - 150.sh(context));
+    final double iconSize = isDocked ? 48.0.sw(context) : 64.0.sw(context);
 
     return Positioned(
       left: xPos,
@@ -372,6 +404,7 @@ class _FloatingAppIconState extends ConsumerState<FloatingAppIcon> {
                 app: widget.app,
                 showLabel: widget.showLabel,
                 size: iconSize,
+                isDocked: isDocked,
               ),
             ),
           ),
@@ -388,7 +421,12 @@ class _FloatingAppIconState extends ConsumerState<FloatingAppIcon> {
             widget.app.yPos = yPos;
             await _savePosition(xPos, yPos);
           },
-          child: AppIconContent(app: widget.app, showLabel: widget.showLabel, size: iconSize),
+          child: AppIconContent(
+            app: widget.app,
+            showLabel: widget.showLabel,
+            size: iconSize,
+            isDocked: isDocked,
+          ),
         ),
       ),
     );
@@ -399,22 +437,32 @@ class AppIconContent extends ConsumerWidget {
   final AppInfo app;
   final bool showLabel;
   final double size;
-  const AppIconContent({super.key, required this.app, this.showLabel = true, this.size = 64.0});
+  final bool isDocked;
+
+  const AppIconContent({
+    super.key,
+    required this.app,
+    this.showLabel = true,
+    this.size = 64.0,
+    this.isDocked = false,
+  });
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final theme = ref.watch(themeMoodProvider);
     final iconStyle = ref.watch(iconStyleProvider).value ?? AppIconStyle.box;
     final processedIcon = ref.watch(processedIconProvider(app.iconBytes));
+    final defaultPackages = ref.watch(defaultPackagesProvider).value ?? {};
+    final isDefaultApp = isDocked && defaultPackages.contains(app.packageName);
 
     return processedIcon.when(
       data: (iconBytes) => iconStyle == AppIconStyle.box
-          ? StyledAppIcon(app: app, theme: theme, iconBytes: iconBytes, showLabel: showLabel, size: size)
-          : StyledAppIconTwo(app: app, theme: theme, iconBytes: iconBytes, showLabel: showLabel, size: size),
+          ? StyledAppIcon(app: app, theme: theme, iconBytes: iconBytes, showLabel: showLabel, size: size, isDefaultApp: isDefaultApp)
+          : StyledAppIconTwo(app: app, theme: theme, iconBytes: iconBytes, showLabel: showLabel, size: size, isDefaultApp: isDefaultApp),
       loading: () => const Center(child: CircularProgressIndicator()),
       error: (err, _) => iconStyle == AppIconStyle.box
-          ? StyledAppIcon(app: app, theme: theme, iconBytes: app.iconBytes, showLabel: showLabel, size: size)
-          : StyledAppIconTwo(app: app, theme: theme, iconBytes: app.iconBytes, showLabel: showLabel, size: size),
+          ? StyledAppIcon(app: app, theme: theme, iconBytes: app.iconBytes, showLabel: showLabel, size: size, isDefaultApp: isDefaultApp)
+          : StyledAppIconTwo(app: app, theme: theme, iconBytes: app.iconBytes, showLabel: showLabel, size: size, isDefaultApp: isDefaultApp),
     );
   }
 }

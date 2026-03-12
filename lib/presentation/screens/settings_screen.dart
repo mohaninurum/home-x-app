@@ -6,6 +6,7 @@ import '../../core/mood_theme.dart';
 import '../theme_provider.dart';
 import '../providers.dart';
 import '../../core/responsive_utils.dart';
+import 'icon_customization_screen.dart';
 
 class SettingsScreen extends ConsumerWidget {
   const SettingsScreen({super.key});
@@ -136,9 +137,47 @@ class SettingsScreen extends ConsumerWidget {
                 error: (err, stack) => Text('Error loading style: $err'),
               ),
 
+          SizedBox(height: 16.sh(context)),
+
+          // Customization Button
+          ElevatedButton.icon(
+            style: ElevatedButton.styleFrom(
+              backgroundColor: theme.primaryColor.withOpacity(0.1),
+              foregroundColor: theme.primaryColor,
+              padding: EdgeInsets.symmetric(
+                horizontal: 20.sw(context),
+                vertical: 16.sh(context),
+              ),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(16.sw(context)),
+                side: BorderSide(
+                  color: theme.primaryColor.withOpacity(0.3),
+                ),
+              ),
+              elevation: 0,
+            ),
+            onPressed: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => const IconCustomizationScreen(),
+                ),
+              );
+            },
+            icon: Icon(Icons.tune, size: 24.sw(context)),
+            label: Text(
+              "Advanced Customization",
+              style: TextStyle(
+                fontSize: 16.wsp(context),
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+          ),
+          
           SizedBox(height: 24.sh(context)),
 
           // ── Wallpaper Section ─────────────────────────────────────────
+
           Text(
             'WALLPAPER',
             style: TextStyle(
