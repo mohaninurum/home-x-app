@@ -1,0 +1,16 @@
+[33mbb60013[m[33m ([m[1;36mHEAD[m[33m -> [m[1;32mmain[m[33m)[m HEAD@{0}: commit: add search
+[33me594749[m HEAD@{1}: checkout: moving from features to main
+[33m6e540eb[m[33m ([m[1;31morigin/features[m[33m, [m[1;32mfeatures[m[33m)[m HEAD@{2}: commit: fix
+[33mb47eb72[m HEAD@{3}: commit: add feature
+[33me594749[m HEAD@{4}: checkout: moving from main to features
+[33me594749[m HEAD@{5}: commit: set
+[33m82b1eb2[m HEAD@{6}: commit: home fix
+[33m0d3c9b3[m[33m ([m[1;33mtag: [m[1;33mv9[m[33m)[m HEAD@{7}: commit: updated
+[33m841cb40[m[33m ([m[1;33mtag: [m[1;33mv8[m[33m)[m HEAD@{8}: commit: fix crash
+[33m980005f[m[33m ([m[1;33mtag: [m[1;33mv7[m[33m)[m HEAD@{9}: commit: smooth 2
+[33m30baffa[m[33m ([m[1;33mtag: [m[1;33mv6[m[33m)[m HEAD@{10}: commit: smooth
+[33m6f05162[m[33m ([m[1;33mtag: [m[1;33mv5[m[33m)[m HEAD@{11}: commit: safe
+[33mda5dd03[m HEAD@{12}: commit: icon
+[33maa8c46f[m[33m ([m[1;33mtag: [m[1;33mv3[m[33m)[m HEAD@{13}: commit: fix
+[33m6afac1a[m HEAD@{14}: commit: updated
+[33m2a52260[m[33m ([m[1;33mtag: [m[1;33mv1[m[33m)[m HEAD@{15}: commit (initial): first commit
