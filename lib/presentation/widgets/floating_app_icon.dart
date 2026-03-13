@@ -334,6 +334,8 @@ class _FloatingAppIconState extends ConsumerState<FloatingAppIcon> {
 
   @override
   Widget build(BuildContext context) {
+    final isEditMode = ref.watch(editModeProvider);
+
     if (!widget.isFloating) {
       return GestureDetector(
         onTap: () {
@@ -396,6 +398,7 @@ class _FloatingAppIconState extends ConsumerState<FloatingAppIcon> {
         },
         child: Draggable<AppInfo>(
           data: widget.app,
+          maxSimultaneousDrags: isEditMode ? 1 : 0,
           feedback: Material(
             color: Colors.transparent,
             child: Opacity(

@@ -7,6 +7,7 @@ import '../theme_provider.dart';
 import '../providers.dart';
 import '../../core/responsive_utils.dart';
 import 'icon_customization_screen.dart';
+import 'clock_customization_screen.dart';
 
 class SettingsScreen extends ConsumerWidget {
   const SettingsScreen({super.key});
@@ -174,6 +175,43 @@ class SettingsScreen extends ConsumerWidget {
             ),
           ),
           
+          SizedBox(height: 16.sh(context)),
+
+          // Clock Customization Button
+          ElevatedButton.icon(
+            style: ElevatedButton.styleFrom(
+              backgroundColor: theme.primaryColor.withOpacity(0.1),
+              foregroundColor: theme.primaryColor,
+              padding: EdgeInsets.symmetric(
+                horizontal: 20.sw(context),
+                vertical: 16.sh(context),
+              ),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(16.sw(context)),
+                side: BorderSide(
+                  color: theme.primaryColor.withOpacity(0.3),
+                ),
+              ),
+              elevation: 0,
+            ),
+            onPressed: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => const ClockCustomizationScreen(),
+                ),
+              );
+            },
+            icon: Icon(Icons.access_time, size: 24.sw(context)),
+            label: Text(
+              "Clock Customization",
+              style: TextStyle(
+                fontSize: 16.wsp(context),
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+          ),
+          
           SizedBox(height: 24.sh(context)),
 
           // ── Wallpaper Section ─────────────────────────────────────────
@@ -297,6 +335,56 @@ class SettingsScreen extends ConsumerWidget {
                     .read(nativeAppServiceProvider)
                     .openDefaultLauncherSettings();
               },
+            ),
+          ),
+
+          SizedBox(height: 12.sh(context)),
+
+          // Customization Toggles
+          Container(
+            decoration: BoxDecoration(
+              color: theme.primaryColor.withOpacity(0.05),
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(color: theme.primaryColor.withOpacity(0.2)),
+            ),
+            child: Column(
+              children: [
+                Consumer(
+                  builder: (context, ref, _) {
+                    final showDock = ref.watch(dockVisibilityProvider).value ?? true;
+                    return SwitchListTile(
+                      secondary: Icon(Icons.dock, color: theme.primaryColor),
+                      title: Text(
+                        'Show Bottom Dock',
+                        style: TextStyle(color: theme.primaryColor, fontSize: 16.wsp(context)),
+                      ),
+                      value: showDock,
+                      activeColor: theme.secondaryColor,
+                      onChanged: (value) {
+                        ref.read(dockVisibilityProvider.notifier).setEnabled(value);
+                      },
+                    );
+                  },
+                ),
+                Divider(color: theme.primaryColor.withOpacity(0.2), height: 1),
+                Consumer(
+                  builder: (context, ref, _) {
+                    final showAddBtn = ref.watch(addButtonVisibilityProvider).value ?? true;
+                    return SwitchListTile(
+                      secondary: Icon(Icons.add_circle_outline, color: theme.primaryColor),
+                      title: Text(
+                        'Show Add Button',
+                        style: TextStyle(color: theme.primaryColor, fontSize: 16.wsp(context)),
+                      ),
+                      value: showAddBtn,
+                      activeColor: theme.secondaryColor,
+                      onChanged: (value) {
+                        ref.read(addButtonVisibilityProvider.notifier).setEnabled(value);
+                      },
+                    );
+                  },
+                ),
+              ],
             ),
           ),
 
