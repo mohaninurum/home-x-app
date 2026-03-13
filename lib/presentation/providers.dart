@@ -185,12 +185,14 @@ class IconImageNotifier extends Notifier<void> {
     final prefs = await SharedPreferences.getInstance();
     await prefs.setString('${packageName}_icon_path', path);
     ref.invalidate(appsProvider);
+    ref.invalidate(homeAppsListProvider);
   }
 
   Future<void> clearCustomIcon(String packageName) async {
     final prefs = await SharedPreferences.getInstance();
     await prefs.remove('${packageName}_icon_path');
     ref.invalidate(appsProvider);
+    ref.invalidate(homeAppsListProvider);
   }
 }
 
