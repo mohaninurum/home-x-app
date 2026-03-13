@@ -124,6 +124,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
                     });
                   },
                   onTap: () {
+                    FocusScope.of(context).unfocus();
                     if (_showAddWidgetButton) {
                       setState(() {
                         _showAddWidgetButton = false;
@@ -488,6 +489,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
                                           _isSearching = false;
                                           _searchQuery = "";
                                           _searchController.clear();
+                                          FocusScope.of(context).unfocus();
                                         });
                                       },
                                     )
@@ -549,6 +551,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
                           _isSearching = false;
                           _searchQuery = "";
                           _searchController.clear();
+                          FocusScope.of(context).unfocus();
                         });
                       },
                       child: Container(

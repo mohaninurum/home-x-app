@@ -115,11 +115,14 @@ class StyledAppIcon extends ConsumerWidget {
                 stops: const [0.0, 0.3, 0.7, 1.0],
               ),
             ),
-            padding: EdgeInsets.all(scaledSize * 0.18),
-            child: Image(
-              image: imageProvider,
-              fit: BoxFit.contain,
-              filterQuality: FilterQuality.high,
+            padding: EdgeInsets.all(app.customImagePath != null ? 0 : scaledSize * 0.18),
+            child: ClipRRect(
+              borderRadius: BorderRadius.circular(app.customImagePath != null ? borderRadiusVal : customSize * 0.22 * customization.borderRadiusMultiplier),
+              child: Image(
+                image: imageProvider,
+                fit: app.customImagePath != null ? BoxFit.cover : BoxFit.contain,
+                filterQuality: FilterQuality.high,
+              ),
             ),
           ),
         ),
@@ -245,12 +248,12 @@ class StyledAppIconTwo extends ConsumerWidget {
             ),
           ),
           child: Container(
-            margin: EdgeInsets.all(scaledSize * 0.12),
+            margin: EdgeInsets.all(app.customImagePath != null ? 0 : scaledSize * 0.12),
             decoration: BoxDecoration(
               shape: BoxShape.circle,
               image: DecorationImage(
                 image: imageProvider,
-                fit: BoxFit.contain,
+                fit: app.customImagePath != null ? BoxFit.cover : BoxFit.contain,
               ),
             ),
           ),
