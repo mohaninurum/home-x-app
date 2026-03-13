@@ -6,6 +6,7 @@ class AppInfo {
   final Uint8List iconBytes;
   double xPos;
   double yPos;
+  String? customImagePath;
 
   AppInfo({
     required this.packageName,
@@ -13,6 +14,7 @@ class AppInfo {
     required this.iconBytes,
     this.xPos = 0.0,
     this.yPos = 0.0,
+    this.customImagePath,
   });
 
   factory AppInfo.fromMap(Map<Object?, Object?> map) {

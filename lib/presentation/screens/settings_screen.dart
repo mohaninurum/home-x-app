@@ -351,24 +351,6 @@ class SettingsScreen extends ConsumerWidget {
               children: [
                 Consumer(
                   builder: (context, ref, _) {
-                    final showDock = ref.watch(dockVisibilityProvider).value ?? true;
-                    return SwitchListTile(
-                      secondary: Icon(Icons.dock, color: theme.primaryColor),
-                      title: Text(
-                        'Show Bottom Dock',
-                        style: TextStyle(color: theme.primaryColor, fontSize: 16.wsp(context)),
-                      ),
-                      value: showDock,
-                      activeColor: theme.secondaryColor,
-                      onChanged: (value) {
-                        ref.read(dockVisibilityProvider.notifier).setEnabled(value);
-                      },
-                    );
-                  },
-                ),
-                Divider(color: theme.primaryColor.withOpacity(0.2), height: 1),
-                Consumer(
-                  builder: (context, ref, _) {
                     final showAddBtn = ref.watch(addButtonVisibilityProvider).value ?? true;
                     return SwitchListTile(
                       secondary: Icon(Icons.add_circle_outline, color: theme.primaryColor),
@@ -422,6 +404,54 @@ class SettingsScreen extends ConsumerWidget {
               },
             ),
           ),
+
+          SizedBox(height: 24.sh(context)),
+          
+          // Drawer Grid Size Section
+          Text(
+            'DRAWER SETTINGS',
+            style: TextStyle(
+              color: theme.primaryColor.withOpacity(0.7),
+              fontSize: 12.wsp(context),
+              fontWeight: FontWeight.bold,
+              letterSpacing: 1.5.sw(context),
+            ),
+          ),
+          SizedBox(height: 8.sh(context)),
+          ref.watch(gridSizeProvider).when(
+            data: (currentGridSize) => Container(
+              decoration: BoxDecoration(
+                color: theme.primaryColor.withOpacity(0.05),
+                borderRadius: BorderRadius.circular(12.sw(context)),
+                border: Border.all(color: theme.primaryColor.withOpacity(0.2)),
+              ),
+              child: Column(
+                children: [4, 5].map((size) {
+                  final isSelected = currentGridSize == size;
+                  return ListTile(
+                    leading: Icon(
+                      size == 4 ? Icons.grid_4x4 : Icons.grid_view,
+                      color: theme.primaryColor,
+                    ),
+                    title: Text(
+                      '$size × $size Grid',
+                      style: TextStyle(color: theme.primaryColor, fontSize: 16.wsp(context)),
+                    ),
+                    trailing: isSelected
+                        ? Icon(Icons.radio_button_checked, color: theme.secondaryColor)
+                        : Icon(Icons.radio_button_off, color: theme.primaryColor.withOpacity(0.3)),
+                    onTap: () {
+                      ref.read(gridSizeProvider.notifier).setGridSize(size);
+                    },
+                  );
+                }).toList(),
+              ),
+            ),
+            loading: () => const Center(child: CircularProgressIndicator()),
+            error: (err, _) => Text('Error loading grid size: $err'),
+          ),
+
+          SizedBox(height: 24.sh(context)),
 
           // Future settings placeholders can go here
           Text(

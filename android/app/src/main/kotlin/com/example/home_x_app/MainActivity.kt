@@ -90,6 +90,22 @@ class MainActivity: FlutterFragmentActivity() {
                         }
                     }
 
+                    "uninstallApp" -> {
+                        val packageName = call.argument<String>("packageName")
+                        if (packageName != null) {
+                            try {
+                                val intent = Intent(Intent.ACTION_DELETE)
+                                intent.data = android.net.Uri.parse("package:$packageName")
+                                startActivity(intent)
+                                result.success(true)
+                            } catch (e: Exception) {
+                                result.error("UNINSTALL_ERROR", e.message, null)
+                            }
+                        } else {
+                            result.error("INVALID_PACKAGE", "Package name is null", null)
+                        }
+                    }
+
                     else -> result.notImplemented()
                 }
             }

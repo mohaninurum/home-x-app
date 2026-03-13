@@ -27,6 +27,7 @@ class _AppPickerDialogState extends ConsumerState<AppPickerDialog> {
   Widget build(BuildContext context) {
     final appsAsync = ref.watch(appsProvider);
     final theme = ref.watch(themeMoodProvider);
+    final hiddenApps = ref.watch(hiddenAppsProvider).value ?? {};
 
     return ClipRRect(
       borderRadius: BorderRadius.vertical(top: Radius.circular(40.sw(context))),
@@ -150,8 +151,11 @@ class _AppPickerDialogState extends ConsumerState<AppPickerDialog> {
               Expanded(
                 child: appsAsync.when(
                   data: (allApps) {
-                    final apps = allApps.where((app) => 
-                      app.label.toLowerCase().contains(_searchQuery)).toList();
+                    final apps = allApps.where((app) {
+                      final matchesSearch = app.label.toLowerCase().contains(_searchQuery);
+                      final isHidden = hiddenApps.contains(app.packageName);
+                      return matchesSearch && !isHidden;
+                    }).toList();
 
                     if (apps.isEmpty) {
                       return const Center(
