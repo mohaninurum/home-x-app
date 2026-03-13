@@ -167,20 +167,38 @@ final appsProvider = FutureProvider<List<AppInfo>>((ref) async {
   final service = ref.watch(nativeAppServiceProvider);
   final apps = await service.getInstalledApps();
 
-  // Load saved positions
+  // Load saved settings
   final prefs = await SharedPreferences.getInstance();
   for (var app in apps) {
     app.xPos = prefs.getDouble('${app.packageName}_x') ?? -1.0;
     app.yPos = prefs.getDouble('${app.packageName}_y') ?? -1.0;
+    app.customImagePath = prefs.getString('${app.packageName}_icon_path');
   }
   return apps;
 });
 
-/// Provider for the initial 4 default apps
-final defaultPackagesProvider = FutureProvider<Set<String>>((ref) async {
-  final allApps = await ref.watch(appsProvider.future);
-  return allApps.take(4).map((a) => a.packageName).toSet();
+class IconImageNotifier extends Notifier<void> {
+  @override
+  void build() {}
+
+  Future<void> setCustomIcon(String packageName, String path) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString('${packageName}_icon_path', path);
+    ref.invalidate(appsProvider);
+  }
+
+  Future<void> clearCustomIcon(String packageName) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.remove('${packageName}_icon_path');
+    ref.invalidate(appsProvider);
+  }
+}
+
+final iconImageProvider = NotifierProvider<IconImageNotifier, void>(() {
+  return IconImageNotifier();
 });
+
+
 
 /// Provider for package names of apps that should appear on the Home Screen
 class HomeAppsNotifier extends AsyncNotifier<Set<String>> {
@@ -192,11 +210,9 @@ class HomeAppsNotifier extends AsyncNotifier<Set<String>> {
 
     final hasInitialized = prefs.getBool('has_initialized_defaults') ?? false;
     if (!hasInitialized) {
-      final allApps = await ref.watch(appsProvider.future);
-      final defaultApps = allApps.take(4).map((a) => a.packageName).toList();
-      await prefs.setStringList(_key, defaultApps);
+      await prefs.setStringList(_key, []);
       await prefs.setBool('has_initialized_defaults', true);
-      return defaultApps.toSet();
+      return {};
     }
 
     final list = prefs.getStringList(_key) ?? [];
@@ -296,6 +312,50 @@ final homeAppsProvider = AsyncNotifierProvider<HomeAppsNotifier, Set<String>>(
   () {
     return HomeAppsNotifier();
   },
+);
+
+/// Provider for package names of apps that are hidden from the main drawer
+class HiddenAppsNotifier extends AsyncNotifier<Set<String>> {
+  static const _key = 'hidden_apps';
+
+  @override
+  Future<Set<String>> build() async {
+    final prefs = await SharedPreferences.getInstance();
+    final list = prefs.getStringList(_key) ?? [];
+    return list.toSet();
+  }
+
+  Future<void> hideApp(String packageName) async {
+    final prefs = await SharedPreferences.getInstance();
+    final current = state.value ?? {};
+    final updated = {...current, packageName};
+    await prefs.setStringList(_key, updated.toList());
+    state = AsyncData(updated);
+
+    // Also remove from home screen if it was there
+    ref.read(homeAppsProvider.notifier).removeApp(packageName);
+  }
+
+  Future<void> unhideApp(String packageName) async {
+    final prefs = await SharedPreferences.getInstance();
+    final current = state.value ?? {};
+    final updated = current.where((id) => id != packageName).toSet();
+    await prefs.setStringList(_key, updated.toList());
+    state = AsyncData(updated);
+  }
+
+  Future<void> toggleHide(String packageName) async {
+    final current = state.value ?? {};
+    if (current.contains(packageName)) {
+      await unhideApp(packageName);
+    } else {
+      await hideApp(packageName);
+    }
+  }
+}
+
+final hiddenAppsProvider = AsyncNotifierProvider<HiddenAppsNotifier, Set<String>>(
+  () => HiddenAppsNotifier(),
 );
 
 /// Provider for AppInfo objects that are ON the Home Screen
@@ -550,27 +610,7 @@ final editModeProvider = NotifierProvider<EditModeNotifier, bool>(() {
   return EditModeNotifier();
 });
 
-/// Provider for bottom dock visibility
-class DockVisibilityNotifier extends AsyncNotifier<bool> {
-  static const _key = 'show_bottom_dock';
 
-  @override
-  Future<bool> build() async {
-    final prefs = await SharedPreferences.getInstance();
-    return prefs.getBool(_key) ?? true; // Default to true
-  }
-
-  Future<void> setEnabled(bool enabled) async {
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.setBool(_key, enabled);
-    state = AsyncData(enabled);
-  }
-}
-
-final dockVisibilityProvider =
-    AsyncNotifierProvider<DockVisibilityNotifier, bool>(() {
-      return DockVisibilityNotifier();
-    });
 
 /// Provider for add button visibility
 class AddButtonVisibilityNotifier extends AsyncNotifier<bool> {
@@ -593,3 +633,26 @@ final addButtonVisibilityProvider =
     AsyncNotifierProvider<AddButtonVisibilityNotifier, bool>(() {
       return AddButtonVisibilityNotifier();
     });
+
+/// Provider for app drawer grid size (cross axis count)
+class GridSizeNotifier extends AsyncNotifier<int> {
+  static const _key = 'grid_size';
+
+  @override
+  Future<int> build() async {
+    final prefs = await SharedPreferences.getInstance();
+    return prefs.getInt(_key) ?? 4; // Default to 4x4
+  }
+
+  Future<void> setGridSize(int size) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setInt(_key, size);
+    state = AsyncData(size);
+  }
+}
+
+final gridSizeProvider = AsyncNotifierProvider<GridSizeNotifier, int>(() {
+  return GridSizeNotifier();
+});
+
+

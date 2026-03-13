@@ -290,7 +290,7 @@ class _ClockCustomizationScreenState extends ConsumerState<ClockCustomizationScr
                       onChanged: (val) => ref.read(clockCustomizationProvider.notifier).updateCustomization(currentCustomization.copyWith(extendSecondHand: val)),
                     ),
                     SwitchListTile(
-                      title: Text('Hourly Hindi Chime', style: TextStyle(color: theme.primaryColor)),
+                      title: Text('Speaks the Time', style: TextStyle(color: theme.primaryColor)),
                       value: currentCustomization.hourlyChimeEnabled,
                       onChanged: (val) => ref.read(clockCustomizationProvider.notifier).updateCustomization(currentCustomization.copyWith(hourlyChimeEnabled: val)),
                     ),

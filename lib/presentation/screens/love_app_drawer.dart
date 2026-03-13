@@ -7,6 +7,7 @@ import '../theme_provider.dart';
 import '../widgets/floating_app_icon.dart';
 import '../widgets/animated_hearts_background.dart';
 import '../widgets/gesture_drawing_detector.dart';
+import 'package:image_picker/image_picker.dart';
 
 import '../../domain/app_info.dart';
 import '../../core/responsive_utils.dart';
@@ -31,13 +32,115 @@ class _LoveAppDrawerState extends ConsumerState<LoveAppDrawer> {
     super.dispose();
   }
 
+  void Function() _onAppLongPress(
+    AppInfo app,
+    bool isOnHome,
+    dynamic theme,
+    dynamic nativeService,
+  ) {
+    return () async {
+      final RenderBox button = context.findRenderObject() as RenderBox;
+      final RenderBox overlay = Overlay.of(context).context.findRenderObject() as RenderBox;
+      final RelativeRect position = RelativeRect.fromRect(
+        Rect.fromPoints(
+          button.localToGlobal(Offset.zero, ancestor: overlay),
+          button.localToGlobal(button.size.bottomRight(Offset.zero), ancestor: overlay),
+        ),
+        Offset.zero & overlay.size,
+      );
+
+      final result = await showMenu<String>(
+        context: context,
+        position: position,
+        color: theme.backgroundColor.withOpacity(0.95),
+        elevation: 8,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        items: [
+          PopupMenuItem<String>(
+            value: 'toggle_home',
+            child: Row(
+              children: [
+                Icon(
+                  isOnHome ? Icons.favorite_border : Icons.favorite,
+                  color: theme.primaryColor,
+                  size: 20,
+                ),
+                const SizedBox(width: 12),
+                Text(
+                  isOnHome ? 'Remove from Home' : 'Add to Home',
+                  style: TextStyle(color: theme.primaryColor, fontWeight: FontWeight.w600),
+                ),
+              ],
+            ),
+          ),
+          PopupMenuItem<String>(
+            value: 'change_icon',
+            child: Row(
+              children: [
+                Icon(Icons.image_outlined, color: theme.primaryColor, size: 20),
+                const SizedBox(width: 12),
+                Text(
+                  'Change Icon',
+                  style: TextStyle(color: theme.primaryColor, fontWeight: FontWeight.w600),
+                ),
+              ],
+            ),
+          ),
+          if (app.customImagePath != null)
+            PopupMenuItem<String>(
+              value: 'reset_icon',
+              child: Row(
+                children: [
+                  Icon(Icons.restore_outlined, color: theme.primaryColor, size: 20),
+                  const SizedBox(width: 12),
+                  Text(
+                    'Reset Icon',
+                    style: TextStyle(color: theme.primaryColor, fontWeight: FontWeight.w600),
+                  ),
+                ],
+              ),
+            ),
+          PopupMenuItem<String>(
+            value: 'uninstall',
+            child: Row(
+              children: [
+                const Icon(Icons.delete_outline, color: Colors.redAccent, size: 20),
+                const SizedBox(width: 12),
+                const Text(
+                  'Uninstall',
+                  style: TextStyle(color: Colors.redAccent, fontWeight: FontWeight.w600),
+                ),
+              ],
+            ),
+          ),
+        ],
+      );
+
+      if (result == 'toggle_home') {
+        ref.read(homeAppsProvider.notifier).toggleApp(app.packageName);
+      } else if (result == 'change_icon') {
+        final picker = ImagePicker();
+        final pickedFile = await picker.pickImage(source: ImageSource.gallery);
+        if (pickedFile != null) {
+          await ref.read(iconImageProvider.notifier).setCustomIcon(app.packageName, pickedFile.path);
+        }
+      } else if (result == 'reset_icon') {
+        await ref.read(iconImageProvider.notifier).clearCustomIcon(app.packageName);
+      } else if (result == 'uninstall') {
+        nativeService.uninstallApp(app.packageName);
+      }
+    };
+  }
+
   @override
   Widget build(BuildContext context) {
     final appsAsync = ref.watch(appsProvider);
     final theme = ref.watch(themeMoodProvider);
     final homeApps = ref.watch(homeAppsProvider).value ?? {};
+    final hiddenApps = ref.watch(hiddenAppsProvider).value ?? {};
     final nativeService = ref.read(nativeAppServiceProvider);
     final wallpaperPath = ref.watch(wallpaperProvider).value;
+    final gridSize = ref.watch(gridSizeProvider).value ?? 4;
 
     return Scaffold(
       backgroundColor: wallpaperPath != null
@@ -180,7 +283,9 @@ class _LoveAppDrawerState extends ConsumerState<LoveAppDrawer> {
           appsAsync.when(
             data: (apps) {
               final filteredApps = apps.where((app) {
-                return app.label.toLowerCase().contains(_searchQuery);
+                final matchesSearch = app.label.toLowerCase().contains(_searchQuery);
+                final isHidden = hiddenApps.contains(app.packageName);
+                return matchesSearch && !isHidden;
               }).toList();
 
               if (filteredApps.isEmpty) {
@@ -195,50 +300,38 @@ class _LoveAppDrawerState extends ConsumerState<LoveAppDrawer> {
               return GridView.builder(
                 padding: EdgeInsets.all(15.sw(context)),
                 gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-                  crossAxisCount: 4,
-                  crossAxisSpacing: 6.sw(context),
+                  crossAxisCount: gridSize,
+                  crossAxisSpacing: gridSize == 4 ? 6.sw(context) : 4.sw(context),
                   mainAxisSpacing: 5.sw(context),
+                  childAspectRatio: gridSize == 4 ? 1.0 : 0.85,
                 ),
                 itemCount: filteredApps.length,
                 itemBuilder: (context, index) {
                   final app = filteredApps[index];
                   final isOnHome = homeApps.contains(app.packageName);
 
-                  return InkWell(
-                    onTap: () {
-                      nativeService.launchApp(app.packageName);
-                    },
-                    onLongPress: () {
-                      ref
-                          .read(homeAppsProvider.notifier)
-                          .toggleApp(app.packageName);
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        SnackBar(
-                          content: Text(
-                            isOnHome ? 'Removed from Home' : 'Added to Home',
-                          ),
-                          backgroundColor: theme.primaryColor,
-                          duration: const Duration(seconds: 1),
-                        ),
-                      );
-                    },
-                    child: LongPressDraggable<AppInfo>(
-                      data: app,
-                      feedback: Material(
-                        color: Colors.transparent,
-                        child: Opacity(
-                          opacity: 0.7,
-                          child: SizedBox(
-                            width: 80.sw(context),
-                            height: 80.sw(context),
-                            child: AppIconContent(app: app, showLabel: true),
-                          ),
+                  return Draggable<AppInfo>(
+                    data: app,
+                    feedback: Material(
+                      color: Colors.transparent,
+                      child: Opacity(
+                        opacity: 0.7,
+                        child: SizedBox(
+                          width: 80.sw(context),
+                          height: 80.sw(context),
+                          child: AppIconContent(app: app, showLabel: true),
                         ),
                       ),
-                      childWhenDragging: Opacity(
-                        opacity: 0.3,
-                        child: AppIconContent(app: app, showLabel: true),
-                      ),
+                    ),
+                    childWhenDragging: Opacity(
+                      opacity: 0.3,
+                      child: AppIconContent(app: app, showLabel: true),
+                    ),
+                    child: InkWell(
+                      onTap: () {
+                        nativeService.launchApp(app.packageName);
+                      },
+                      onLongPress: _onAppLongPress(app, isOnHome, theme, nativeService),
                       child: Stack(
                         alignment: Alignment.center,
                         children: [

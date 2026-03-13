@@ -3,7 +3,7 @@ import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:image_picker/image_picker.dart';
-import 'package:shared_preferences/shared_preferences.dart';
+
 import '../providers.dart';
 import '../../domain/app_info.dart';
 import '../../domain/hourly_chime_service.dart';
@@ -75,7 +75,6 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
     final wallpaperPath = ref.watch(wallpaperProvider).value;
     final widgetPositions = ref.watch(widgetPositionProvider).value ?? {};
     final isEditMode = ref.watch(editModeProvider);
-    final isDockVisible = ref.watch(dockVisibilityProvider).value ?? true;
     final isAddButtonVisible =
         ref.watch(addButtonVisibilityProvider).value ?? true;
 
@@ -189,61 +188,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
                           homeAppsList,
                         );
 
-                        // Dock app layout logic coordinates
-                        final screenWidth = MediaQuery.of(context).size.width;
-                        final screenHeight = MediaQuery.of(context).size.height;
-                        final dockThresholdY = screenHeight - 150.sh(context);
 
-                        // Capture unset apps or previously misaligned dock apps (those sitting above dock)
-                        // This absorbs any floating app near the dock into a clean layout
-                        final dockApps = allFloatingApps
-                            .where(
-                              (a) =>
-                                  a.yPos <= 0 ||
-                                  (isDockVisible && a.yPos > dockThresholdY),
-                            )
-                            .toList();
-
-                        if (dockApps.isNotEmpty) {
-                          // Sort by existing X to maintain visual order
-                          dockApps.sort((a, b) => a.xPos.compareTo(b.xPos));
-
-                          final dockMargin = 20.sw(context);
-                          final dockPadding = 15.sw(context);
-                          final plusBtnWidth = 55.sh(
-                            context,
-                          ); // Fixed circular shape
-                          final iconSize = 48.0.sw(context);
-
-                          // Calculate the exact center of the space dedicated for apps
-                          final appAreaStartX = dockMargin + dockPadding;
-                          final appAreaEndX =
-                              screenWidth -
-                              dockMargin -
-                              dockPadding -
-                              plusBtnWidth -
-                              10.sw(context);
-                          final appAreaWidth = appAreaEndX - appAreaStartX;
-
-                          final double spacing = dockApps.length > 3
-                              ? 10.sw(context)
-                              : 20.sw(context);
-                          final double totalWidth =
-                              dockApps.length * iconSize +
-                              (dockApps.length - 1) * spacing;
-
-                          final startX =
-                              appAreaStartX + (appAreaWidth - totalWidth) / 2;
-                          final dockY =
-                              screenHeight -
-                              91.0.sh(context); // Exact vertical center of dock
-
-                          for (int i = 0; i < dockApps.length; i++) {
-                            dockApps[i].xPos =
-                                startX + (i * (iconSize + spacing));
-                            dockApps[i].yPos = dockY;
-                          }
-                        }
 
                         return Stack(
                           fit: StackFit.expand,
@@ -279,7 +224,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
                               ),
                             ),
 
-                            // Bottom Dock Background and Add Button
+                            // Bottom Dock Background
                             // --- Floating Widgets ---
                             Positioned(
                               bottom: 30,
@@ -298,77 +243,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
                               ),
                             ),
 
-                            if (isDockVisible)
-                              Positioned(
-                                bottom: 25.sh(context),
-                                left: 0,
-                                right: 0,
-                                child: DragTarget<AppInfo>(
-                                  onWillAccept: (data) => data != null,
-                                  onAccept: (data) async {
-                                    // Snapping logic: align to center of dock
-                                    final dockHeight = 80.sh(context);
-                                    final iconSize = 52.sw(context);
-                                    final dockTop =
-                                        screenHeight - 105.sh(context);
-                                    final snappedY =
-                                        dockTop + (dockHeight - iconSize) / 2;
 
-                                    // Find current x position relative to screen
-                                    // For now, keep the drop xpos but snap y
-                                    // In a more advanced version, we'd calculate grid cells inside the dock
-
-                                    // Since FloatingAppIcon handles its own state for dragging on home_screen currently,
-                                    // we might need to trigger a refresh or update provider.
-                                    // However, the simple fix is to ensure the app state is updated.
-                                    data.yPos = snappedY;
-
-                                    // Persist
-                                    final prefs =
-                                        await SharedPreferences.getInstance();
-                                    await prefs.setDouble(
-                                      '${data.packageName}_y',
-                                      snappedY,
-                                    );
-
-                                    // Trigger rebuild of icons
-                                    // ref.invalidate(homeAppsListProvider); // Removed to prevent circular dependency
-                                  },
-                                  builder: (context, candidateData, rejectedData) {
-                                    return Container(
-                                      height: 75.sh(context),
-                                      padding: EdgeInsets.symmetric(
-                                        vertical: 10.sh(context),
-                                        horizontal: 15.sw(context),
-                                      ),
-                                      decoration: BoxDecoration(
-                                        color: candidateData.isNotEmpty
-                                            ? Colors.white.withAlpha(50)
-                                            : Colors.white.withAlpha(25),
-                                        borderRadius: BorderRadius.circular(
-                                          25.sw(context),
-                                        ),
-                                        border: Border.all(
-                                          color: candidateData.isNotEmpty
-                                              ? Colors.white.withAlpha(60)
-                                              : Colors.white.withAlpha(30),
-                                          width: candidateData.isNotEmpty
-                                              ? 2.0
-                                              : 1.0,
-                                        ),
-                                      ),
-                                      margin: EdgeInsets.symmetric(
-                                        horizontal: 20.sw(context),
-                                      ),
-                                      child: Stack(
-                                        children: [
-                                          // Placeholder or internal dock content could go here
-                                        ],
-                                      ),
-                                    );
-                                  },
-                                ),
-                              ),
 
                             // All Floating Apps (Including initial dock apps)
                             for (var app in allFloatingApps)
@@ -376,47 +251,76 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
                                 app: app,
                                 isFloating: true,
                                 showLabel: false,
-                                onLongPress: () {
+                                onLongPress: () async {
                                   final theme = ref.read(themeMoodProvider);
-                                  showModalBottomSheet(
+                                  final RenderBox overlay = Overlay.of(context).context.findRenderObject() as RenderBox;
+                                  
+                                  final result = await showMenu<String>(
                                     context: context,
-                                    backgroundColor: theme.backgroundColor,
-                                    shape: const RoundedRectangleBorder(
-                                      borderRadius: BorderRadius.vertical(
-                                        top: Radius.circular(20),
-                                      ),
+                                    position: RelativeRect.fromLTRB(
+                                      _lastLongPressPos.dx,
+                                      _lastLongPressPos.dy,
+                                      overlay.size.width - _lastLongPressPos.dx,
+                                      overlay.size.height - _lastLongPressPos.dy,
                                     ),
-                                    builder: (context) => Container(
-                                      padding: const EdgeInsets.symmetric(
-                                        vertical: 20,
-                                      ),
-                                      child: Column(
-                                        mainAxisSize: MainAxisSize.min,
-                                        children: [
-                                          ListTile(
-                                            leading: Icon(
-                                              Icons.delete_outline,
-                                              color: theme.primaryColor,
-                                            ),
-                                            title: Text(
+                                    color: theme.backgroundColor.withOpacity(0.95),
+                                    elevation: 8,
+                                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                                    items: [
+                                      PopupMenuItem<String>(
+                                        value: 'remove',
+                                        child: Row(
+                                          children: [
+                                            Icon(Icons.delete_outline, color: theme.primaryColor, size: 20),
+                                            const SizedBox(width: 12),
+                                            Text(
                                               "Remove from Home",
-                                              style: TextStyle(
-                                                color: theme.primaryColor,
-                                              ),
+                                              style: TextStyle(color: theme.primaryColor, fontWeight: FontWeight.w600),
                                             ),
-                                            onTap: () {
-                                              ref
-                                                  .read(
-                                                    homeAppsProvider.notifier,
-                                                  )
-                                                  .removeApp(app.packageName);
-                                              Navigator.pop(context);
-                                            },
-                                          ),
-                                        ],
+                                          ],
+                                        ),
                                       ),
-                                    ),
+                                      PopupMenuItem<String>(
+                                        value: 'change_icon',
+                                        child: Row(
+                                          children: [
+                                            Icon(Icons.image_outlined, color: theme.primaryColor, size: 20),
+                                            const SizedBox(width: 12),
+                                            Text(
+                                              'Change Icon',
+                                              style: TextStyle(color: theme.primaryColor, fontWeight: FontWeight.w600),
+                                            ),
+                                          ],
+                                        ),
+                                      ),
+                                      if (app.customImagePath != null)
+                                        PopupMenuItem<String>(
+                                          value: 'reset_icon',
+                                          child: Row(
+                                            children: [
+                                              Icon(Icons.restore_outlined, color: theme.primaryColor, size: 20),
+                                              const SizedBox(width: 12),
+                                              Text(
+                                                'Reset Icon',
+                                                style: TextStyle(color: theme.primaryColor, fontWeight: FontWeight.w600),
+                                              ),
+                                            ],
+                                          ),
+                                        ),
+                                    ],
                                   );
+
+                                  if (result == 'remove') {
+                                    ref.read(homeAppsProvider.notifier).removeApp(app.packageName);
+                                  } else if (result == 'change_icon') {
+                                    final picker = ImagePicker();
+                                    final pickedFile = await picker.pickImage(source: ImageSource.gallery);
+                                    if (pickedFile != null) {
+                                      await ref.read(iconImageProvider.notifier).setCustomIcon(app.packageName, pickedFile.path);
+                                    }
+                                  } else if (result == 'reset_icon') {
+                                    await ref.read(iconImageProvider.notifier).clearCustomIcon(app.packageName);
+                                  }
                                 },
                               ),
 

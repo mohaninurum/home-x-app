@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
+import 'dart:io';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'dart:typed_data';
+
+
 import '../../domain/app_info.dart';
 import '../../domain/icon_customization.dart';
 import '../providers.dart';
@@ -12,25 +14,24 @@ import '../../core/responsive_utils.dart';
 class StyledAppIcon extends ConsumerWidget {
   final AppInfo app;
   final MoodTheme theme;
-  final Uint8List iconBytes;
+  final ImageProvider imageProvider;
   final bool showLabel;
   final double size;
-  final bool isDefaultApp;
+
 
   const StyledAppIcon({
     super.key,
     required this.app,
     required this.theme,
-    required this.iconBytes,
+    required this.imageProvider,
     this.showLabel = true,
     this.size = 64.0,
-    this.isDefaultApp = false,
   });
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final customization = ref.watch(iconCustomizationProvider).value ?? const IconCustomization();
-    final double customSize = isDefaultApp ? size : (size * customization.sizeMultiplier);
+    final double customSize = (size * customization.sizeMultiplier);
     final double scaledSize = customSize.sw(context);
     
     // Calculate pulse, glow, and shadows with custom multipliers
@@ -115,15 +116,15 @@ class StyledAppIcon extends ConsumerWidget {
               ),
             ),
             padding: EdgeInsets.all(scaledSize * 0.18),
-            child: Image.memory(
-              iconBytes,
+            child: Image(
+              image: imageProvider,
               fit: BoxFit.contain,
               filterQuality: FilterQuality.high,
             ),
           ),
         ),
         if (showLabel) ...[
-          SizedBox(height: 8 * (isDefaultApp ? 1.0 : customization.spacingMultiplier)),
+          SizedBox(height: 8 * customization.spacingMultiplier),
           Flexible(
             child: Container(
               padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 2),
@@ -143,7 +144,7 @@ class StyledAppIcon extends ConsumerWidget {
                   color: theme.mood == AppMood.hologram
                       ? theme.primaryColor
                       : Colors.black87,
-                  fontSize: 10 * (isDefaultApp ? 1.0 : customization.textSizeMultiplier),
+                  fontSize: 10 * customization.textSizeMultiplier,
                   fontWeight: FontWeight.bold,
                   shadows: [
                     Shadow(color: theme.backgroundColor, blurRadius: 2),
@@ -167,25 +168,24 @@ class StyledAppIcon extends ConsumerWidget {
 class StyledAppIconTwo extends ConsumerWidget {
   final AppInfo app;
   final MoodTheme theme;
-  final Uint8List iconBytes;
+  final ImageProvider imageProvider;
   final bool showLabel;
   final double size;
-  final bool isDefaultApp;
+
 
   const StyledAppIconTwo({
     super.key,
     required this.app,
     required this.theme,
-    required this.iconBytes,
+    required this.imageProvider,
     this.showLabel = true,
     this.size = 64.0,
-    this.isDefaultApp = false,
   });
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final customization = ref.watch(iconCustomizationProvider).value ?? const IconCustomization();
-    final double customSize = isDefaultApp ? size : (size * customization.sizeMultiplier);
+    final double customSize = (size * customization.sizeMultiplier);
     final double scaledSize = customSize.sw(context);
     
     // Calculate pulse, glow, and shadows with custom multipliers
@@ -249,14 +249,14 @@ class StyledAppIconTwo extends ConsumerWidget {
             decoration: BoxDecoration(
               shape: BoxShape.circle,
               image: DecorationImage(
-                image: MemoryImage(iconBytes),
+                image: imageProvider,
                 fit: BoxFit.contain,
               ),
             ),
           ),
         ),
         if (showLabel) ...[
-          SizedBox(height: 8 * (isDefaultApp ? 1.0 : customization.spacingMultiplier)),
+          SizedBox(height: 8 * customization.spacingMultiplier),
           Flexible(
             child: Container(
               padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 2),
@@ -276,7 +276,7 @@ class StyledAppIconTwo extends ConsumerWidget {
                   color: theme.mood == AppMood.hologram
                       ? theme.primaryColor
                       : Colors.black87,
-                  fontSize: 10 * (isDefaultApp ? 1.0 : customization.textSizeMultiplier),
+                  fontSize: 10 * customization.textSizeMultiplier,
                   fontWeight: FontWeight.bold,
                   shadows: [
                     Shadow(color: theme.backgroundColor, blurRadius: 2),
@@ -346,10 +346,7 @@ class _FloatingAppIconState extends ConsumerState<FloatingAppIcon> {
       );
     }
 
-    final screenHeight = MediaQuery.of(context).size.height;
-    // Dynamic size scaling: Shrink to 52.0 if in the dock area (bottom 150px)
-    final bool isDocked = yPos > (screenHeight - 150.sh(context));
-    final double iconSize = isDocked ? 48.0.sw(context) : 64.0.sw(context);
+    final double iconSize = 64.0.sw(context);
 
     return Positioned(
       left: xPos,
@@ -358,43 +355,47 @@ class _FloatingAppIconState extends ConsumerState<FloatingAppIcon> {
         onTap: () {
           ref.read(nativeAppServiceProvider).launchApp(widget.app.packageName);
         },
-        onLongPress: () {
+        onLongPress: () async {
           if (widget.onLongPress != null) {
             widget.onLongPress!();
             return;
           }
           final theme = ref.read(themeMoodProvider);
-          showModalBottomSheet(
+          final RenderBox overlay = Overlay.of(context).context.findRenderObject() as RenderBox;
+          final RenderBox button = context.findRenderObject() as RenderBox;
+          final Offset position = button.localToGlobal(Offset.zero);
+
+          final result = await showMenu<String>(
             context: context,
-            backgroundColor: theme.backgroundColor,
-            shape: const RoundedRectangleBorder(
-              borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+            position: RelativeRect.fromLTRB(
+              position.dx,
+              position.dy,
+              overlay.size.width - position.dx,
+              overlay.size.height - position.dy,
             ),
-            builder: (context) => Container(
-              padding: const EdgeInsets.symmetric(vertical: 20),
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  ListTile(
-                    leading: Icon(
-                      Icons.delete_outline,
-                      color: theme.primaryColor,
-                    ),
-                    title: Text(
+            color: theme.backgroundColor.withOpacity(0.95),
+            elevation: 8,
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+            items: [
+              PopupMenuItem<String>(
+                value: 'remove',
+                child: Row(
+                  children: [
+                    Icon(Icons.delete_outline, color: theme.primaryColor, size: 20),
+                    const SizedBox(width: 12),
+                    Text(
                       "Remove from Home",
-                      style: TextStyle(color: theme.primaryColor),
+                      style: TextStyle(color: theme.primaryColor, fontWeight: FontWeight.w600),
                     ),
-                    onTap: () {
-                      ref
-                          .read(homeAppsProvider.notifier)
-                          .removeApp(widget.app.packageName);
-                      Navigator.pop(context);
-                    },
-                  ),
-                ],
+                  ],
+                ),
               ),
-            ),
+            ],
           );
+
+          if (result == 'remove') {
+            ref.read(homeAppsProvider.notifier).removeApp(widget.app.packageName);
+          }
         },
         child: Draggable<AppInfo>(
           data: widget.app,
@@ -407,7 +408,6 @@ class _FloatingAppIconState extends ConsumerState<FloatingAppIcon> {
                 app: widget.app,
                 showLabel: widget.showLabel,
                 size: iconSize,
-                isDocked: isDocked,
               ),
             ),
           ),
@@ -428,7 +428,6 @@ class _FloatingAppIconState extends ConsumerState<FloatingAppIcon> {
             app: widget.app,
             showLabel: widget.showLabel,
             size: iconSize,
-            isDocked: isDocked,
           ),
         ),
       ),
@@ -440,32 +439,76 @@ class AppIconContent extends ConsumerWidget {
   final AppInfo app;
   final bool showLabel;
   final double size;
-  final bool isDocked;
+
 
   const AppIconContent({
     super.key,
     required this.app,
     this.showLabel = true,
     this.size = 64.0,
-    this.isDocked = false,
   });
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final theme = ref.watch(themeMoodProvider);
     final iconStyle = ref.watch(iconStyleProvider).value ?? AppIconStyle.box;
+
+    if (app.customImagePath != null) {
+      final imageFile = File(app.customImagePath!);
+      if (imageFile.existsSync()) {
+        final imageProvider = FileImage(imageFile);
+        return iconStyle == AppIconStyle.box
+            ? StyledAppIcon(
+                app: app,
+                theme: theme,
+                imageProvider: imageProvider,
+                showLabel: showLabel,
+                size: size,
+              )
+            : StyledAppIconTwo(
+                app: app,
+                theme: theme,
+                imageProvider: imageProvider,
+                showLabel: showLabel,
+                size: size,
+              );
+      }
+    }
+
     final processedIcon = ref.watch(processedIconProvider(app.iconBytes));
-    final defaultPackages = ref.watch(defaultPackagesProvider).value ?? {};
-    final isDefaultApp = isDocked && defaultPackages.contains(app.packageName);
 
     return processedIcon.when(
       data: (iconBytes) => iconStyle == AppIconStyle.box
-          ? StyledAppIcon(app: app, theme: theme, iconBytes: iconBytes, showLabel: showLabel, size: size, isDefaultApp: isDefaultApp)
-          : StyledAppIconTwo(app: app, theme: theme, iconBytes: iconBytes, showLabel: showLabel, size: size, isDefaultApp: isDefaultApp),
+          ? StyledAppIcon(
+              app: app,
+              theme: theme,
+              imageProvider: MemoryImage(iconBytes),
+              showLabel: showLabel,
+              size: size,
+            )
+          : StyledAppIconTwo(
+              app: app,
+              theme: theme,
+              imageProvider: MemoryImage(iconBytes),
+              showLabel: showLabel,
+              size: size,
+            ),
       loading: () => const Center(child: CircularProgressIndicator()),
       error: (err, _) => iconStyle == AppIconStyle.box
-          ? StyledAppIcon(app: app, theme: theme, iconBytes: app.iconBytes, showLabel: showLabel, size: size, isDefaultApp: isDefaultApp)
-          : StyledAppIconTwo(app: app, theme: theme, iconBytes: app.iconBytes, showLabel: showLabel, size: size, isDefaultApp: isDefaultApp),
+          ? StyledAppIcon(
+              app: app,
+              theme: theme,
+              imageProvider: MemoryImage(app.iconBytes),
+              showLabel: showLabel,
+              size: size,
+            )
+          : StyledAppIconTwo(
+              app: app,
+              theme: theme,
+              imageProvider: MemoryImage(app.iconBytes),
+              showLabel: showLabel,
+              size: size,
+            ),
     );
   }
 }
