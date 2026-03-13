@@ -8,6 +8,7 @@ import '../../domain/icon_customization.dart';
 import '../widgets/floating_app_icon.dart';
 import '../../core/responsive_utils.dart';
 import '../../domain/app_info.dart';
+import 'package:flutter_colorpicker/flutter_colorpicker.dart';
 
 class IconCustomizationScreen extends ConsumerWidget {
   const IconCustomizationScreen({super.key});
@@ -418,24 +419,55 @@ class IconCustomizationScreen extends ConsumerWidget {
     );
   }
 
+  void _showColorPickerDialog(
+    BuildContext context,
+    WidgetRef ref,
+    int? currentColor,
+  ) {
+    int pickerColor = currentColor ?? 0xFFFFFFFF;
+    
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Pick Background Color'),
+        content: SingleChildScrollView(
+          child: ColorPicker(
+            pickerColor: Color(pickerColor),
+            onColorChanged: (color) {
+              pickerColor = color.value;
+            },
+            pickerAreaHeightPercent: 0.8,
+            enableAlpha: true,
+            displayThumbColor: true,
+          ),
+        ),
+        actions: [
+          TextButton(
+            child: const Text('Cancel'),
+            onPressed: () {
+              Navigator.of(context).pop();
+            },
+          ),
+          TextButton(
+            child: const Text('Save'),
+            onPressed: () {
+              ref
+                  .read(iconCustomizationProvider.notifier)
+                  .updateCustomization(backgroundColorValue: pickerColor);
+              Navigator.of(context).pop();
+            },
+          ),
+        ],
+      ),
+    );
+  }
+
   Widget _buildColorPicker({
     required BuildContext context,
     required dynamic theme,
     required IconCustomization customization,
     required WidgetRef ref,
   }) {
-    final List<Color> presetColors = [
-      Colors.black,
-      Colors.white,
-      Colors.redAccent,
-      Colors.blueAccent,
-      Colors.greenAccent,
-      Colors.purpleAccent,
-      Colors.orangeAccent,
-      Colors.tealAccent,
-      Colors.pinkAccent,
-    ];
-
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -477,62 +509,30 @@ class IconCustomizationScreen extends ConsumerWidget {
           ],
         ),
         SizedBox(height: 15.sh(context)),
-        SingleChildScrollView(
-          scrollDirection: Axis.horizontal,
-          physics: const BouncingScrollPhysics(),
-          child: Row(
-            children: presetColors.map((color) {
-              final isSelected =
-                  customization.backgroundColorValue == color.value;
-              return GestureDetector(
-                onTap: () {
-                  ref
-                      .read(iconCustomizationProvider.notifier)
-                      .updateCustomization(backgroundColorValue: color.value);
-                },
-                child: AnimatedContainer(
-                  duration: const Duration(milliseconds: 200),
-                  margin: EdgeInsets.only(right: 15.sw(context)),
-                  width: isSelected ? 48.sw(context) : 42.sw(context),
-                  height: isSelected ? 48.sw(context) : 42.sw(context),
-                  decoration: BoxDecoration(
-                    color: color,
-                    shape: BoxShape.circle,
-                    border: Border.all(
-                      color: isSelected
-                          ? theme.primaryColor
-                          : Colors.white.withOpacity(0.1),
-                      width: isSelected ? 3 : 1,
-                    ),
-                    boxShadow: isSelected
-                        ? [
-                            BoxShadow(
-                              color: theme.primaryColor.withOpacity(0.6),
-                              blurRadius: 12,
-                              spreadRadius: 2,
-                            ),
-                          ]
-                        : [
-                            BoxShadow(
-                              color: Colors.black.withOpacity(0.2),
-                              blurRadius: 4,
-                              spreadRadius: 1,
-                            ),
-                          ],
-                  ),
-                  child: isSelected
-                      ? Icon(
-                          Icons.check,
-                          color: color == Colors.white
-                              ? Colors.black
-                              : Colors.white,
-                          size: 20.sw(context),
-                        )
-                      : null,
-                ),
-              );
-            }).toList(),
+        ListTile(
+          contentPadding: EdgeInsets.zero,
+          title: Text(
+            'Pick Custom Color',
+            style: TextStyle(color: theme.primaryColor, fontSize: 16.wsp(context)),
           ),
+          trailing: Container(
+            width: 42.sw(context),
+            height: 42.sw(context),
+            decoration: BoxDecoration(
+              shape: BoxShape.circle,
+              color: customization.backgroundColorValue != null
+                  ? Color(customization.backgroundColorValue!)
+                  : Colors.transparent,
+              border: Border.all(
+                color: theme.primaryColor.withOpacity(0.3),
+                width: 2,
+              ),
+            ),
+            child: customization.backgroundColorValue == null
+                ? Icon(Icons.block, color: theme.primaryColor.withOpacity(0.5), size: 20.sw(context))
+                : null,
+          ),
+          onTap: () => _showColorPickerDialog(context, ref, customization.backgroundColorValue),
         ),
       ],
     );

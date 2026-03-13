@@ -10,6 +10,7 @@ import 'package:image/image.dart' as img;
 import 'package:path_provider/path_provider.dart';
 import 'dart:io';
 import 'package:flutter/material.dart' show Offset;
+import '../domain/clock_customization.dart';
 
 Uint8List removeWhiteBackground(Uint8List bytes) {
   final image = img.decodeImage(bytes);
@@ -123,6 +124,43 @@ class IconCustomizationNotifier extends AsyncNotifier<IconCustomization> {
 final iconCustomizationProvider =
     AsyncNotifierProvider<IconCustomizationNotifier, IconCustomization>(() {
       return IconCustomizationNotifier();
+    });
+
+/// Provider for global analog clock customization settings
+class ClockCustomizationNotifier extends AsyncNotifier<ClockCustomization> {
+  static const _key = 'clock_customization';
+
+  @override
+  Future<ClockCustomization> build() async {
+    final prefs = await SharedPreferences.getInstance();
+    final jsonStr = prefs.getString(_key);
+    if (jsonStr != null) {
+      try {
+        return ClockCustomization.fromMap(jsonDecode(jsonStr));
+      } catch (e) {
+        // Fallback to default
+      }
+    }
+    return const ClockCustomization();
+  }
+
+  Future<void> updateCustomization(ClockCustomization newCustomization) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString(_key, jsonEncode(newCustomization.toMap()));
+    state = AsyncData(newCustomization);
+  }
+
+  Future<void> resetToDefaults() async {
+    const defaultSettings = ClockCustomization();
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString(_key, jsonEncode(defaultSettings.toMap()));
+    state = const AsyncData(defaultSettings);
+  }
+}
+
+final clockCustomizationProvider =
+    AsyncNotifierProvider<ClockCustomizationNotifier, ClockCustomization>(() {
+      return ClockCustomizationNotifier();
     });
 
 final appsProvider = FutureProvider<List<AppInfo>>((ref) async {
@@ -492,4 +530,66 @@ class HeartAnimationNotifier extends AsyncNotifier<bool> {
 final heartAnimationProvider =
     AsyncNotifierProvider<HeartAnimationNotifier, bool>(() {
       return HeartAnimationNotifier();
+    });
+
+/// Provider for edit mode state
+class EditModeNotifier extends Notifier<bool> {
+  @override
+  bool build() => false;
+
+  void toggle() {
+    state = !state;
+  }
+
+  void setEditMode(bool value) {
+    state = value;
+  }
+}
+
+final editModeProvider = NotifierProvider<EditModeNotifier, bool>(() {
+  return EditModeNotifier();
+});
+
+/// Provider for bottom dock visibility
+class DockVisibilityNotifier extends AsyncNotifier<bool> {
+  static const _key = 'show_bottom_dock';
+
+  @override
+  Future<bool> build() async {
+    final prefs = await SharedPreferences.getInstance();
+    return prefs.getBool(_key) ?? true; // Default to true
+  }
+
+  Future<void> setEnabled(bool enabled) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setBool(_key, enabled);
+    state = AsyncData(enabled);
+  }
+}
+
+final dockVisibilityProvider =
+    AsyncNotifierProvider<DockVisibilityNotifier, bool>(() {
+      return DockVisibilityNotifier();
+    });
+
+/// Provider for add button visibility
+class AddButtonVisibilityNotifier extends AsyncNotifier<bool> {
+  static const _key = 'show_add_button';
+
+  @override
+  Future<bool> build() async {
+    final prefs = await SharedPreferences.getInstance();
+    return prefs.getBool(_key) ?? true; // Default to true
+  }
+
+  Future<void> setEnabled(bool enabled) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setBool(_key, enabled);
+    state = AsyncData(enabled);
+  }
+}
+
+final addButtonVisibilityProvider =
+    AsyncNotifierProvider<AddButtonVisibilityNotifier, bool>(() {
+      return AddButtonVisibilityNotifier();
     });
