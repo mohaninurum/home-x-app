@@ -82,64 +82,6 @@ class SettingsScreen extends ConsumerWidget {
 
           SizedBox(height: 24.sh(context)),
 
-          // Icon Style Selection Section
-          Text(
-            'ICON STYLE',
-            style: TextStyle(
-              color: theme.primaryColor.withOpacity(0.7),
-              fontSize: 12.wsp(context),
-              fontWeight: FontWeight.bold,
-              letterSpacing: 1.5.sw(context),
-            ),
-          ),
-          SizedBox(height: 8.sh(context)),
-          ref
-              .watch(iconStyleProvider)
-              .when(
-                data: (currentStyle) => Container(
-                  decoration: BoxDecoration(
-                    color: theme.primaryColor.withOpacity(0.05),
-                    borderRadius: BorderRadius.circular(12.sw(context)),
-                    border: Border.all(
-                      color: theme.primaryColor.withOpacity(0.2),
-                    ),
-                  ),
-                  child: Column(
-                    children: AppIconStyle.values.map((style) {
-                      final isSelected = currentStyle == style;
-                      return ListTile(
-                        leading: Icon(
-                          style == AppIconStyle.box
-                              ? Icons.check_box_outline_blank
-                              : Icons.circle_outlined,
-                          color: theme.primaryColor,
-                        ),
-                        title: Text(
-                          style == AppIconStyle.box
-                              ? '3D Box (StyledAppIcon)'
-                              : 'Circle (StyledAppIconTwo)',
-                          style: TextStyle(color: theme.primaryColor, fontSize: 16.wsp(context)),
-                        ),
-                        trailing: isSelected
-                            ? Icon(
-                                Icons.radio_button_checked,
-                                color: theme.secondaryColor,
-                              )
-                            : Icon(
-                                Icons.radio_button_off,
-                                color: theme.primaryColor.withOpacity(0.3),
-                              ),
-                        onTap: () {
-                          ref.read(iconStyleProvider.notifier).setStyle(style);
-                        },
-                      );
-                    }).toList(),
-                  ),
-                ),
-                loading: () => const Center(child: CircularProgressIndicator()),
-                error: (err, stack) => Text('Error loading style: $err'),
-              ),
-
           SizedBox(height: 16.sh(context)),
 
           // Customization Button

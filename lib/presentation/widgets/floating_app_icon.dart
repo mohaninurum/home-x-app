@@ -177,146 +177,6 @@ class StyledAppIcon extends ConsumerWidget {
   }
 }
 
-class StyledAppIconTwo extends ConsumerWidget {
-  final AppInfo app;
-  final MoodTheme theme;
-  final ImageProvider imageProvider;
-  final bool showLabel;
-  final double size;
-
-
-  const StyledAppIconTwo({
-    super.key,
-    required this.app,
-    required this.theme,
-    required this.imageProvider,
-    this.showLabel = true,
-    this.size = 64.0,
-  });
-
-  @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final customization = ref.watch(iconCustomizationProvider).value ?? const IconCustomization();
-    final double customSize = (size * customization.sizeMultiplier);
-    final double scaledSize = customSize.sw(context);
-    
-    // Calculate pulse, glow, and shadows with custom multipliers
-    const double pulseValue = 1.0;
-    final double shadowMult = customization.shadowMultiplier;
-    final double glowSpread = (theme.mood == AppMood.hologram ? 4.0 : 1.0) * shadowMult;
-    final double glowBlur = (theme.mood == AppMood.hologram ? 20.0 : 10.0) * shadowMult;
-
-    return Column(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        Container(
-          width: scaledSize,
-          height: scaledSize,
-          decoration: BoxDecoration(
-            shape: BoxShape.circle,
-            color: customization.backgroundColorValue != null 
-                ? Color(customization.backgroundColorValue!)
-                : null,
-            gradient: customization.backgroundColorValue == null
-              ? LinearGradient(
-                  begin: Alignment.topLeft,
-                  end: Alignment.bottomRight,
-                  colors: [
-                    theme.primaryColor.withOpacity(0.4),
-                    theme.secondaryColor.withOpacity(0.1),
-                  ],
-                )
-              : null,
-            boxShadow: [
-              // Outer Glow (Hologram style)
-              BoxShadow(
-                color: theme.iconHighlightColor.withOpacity(
-                  0.5 * (theme.mood == AppMood.hologram ? pulseValue : 1.0),
-                ),
-                blurRadius: glowBlur,
-                spreadRadius: glowSpread,
-              ),
-              // Bottom Shadow (Depth/Skeuomorphism)
-              BoxShadow(
-                color: Colors.black.withOpacity(0.3),
-                offset: Offset(customSize * 0.06, customSize * 0.06) * shadowMult,
-                blurRadius: customSize * 0.12 * shadowMult,
-              ),
-              // Inner Highlight (Top Edge - Skeuomorphism)
-              BoxShadow(
-                color: Colors.white.withOpacity(0.4),
-                offset: Offset(-scaledSize * 0.03, -scaledSize * 0.03) * shadowMult,
-                blurRadius: scaledSize * 0.06 * shadowMult,
-              ),
-            ],
-            border: Border.all(
-              color: theme.mood == AppMood.hologram
-                  ? theme.primaryColor.withOpacity(0.8)
-                  : Colors.white.withOpacity(0.3),
-              width: 1.5,
-            ),
-          ),
-          child: Container(
-            margin: EdgeInsets.all(app.customImagePath != null ? 0 : scaledSize * 0.12),
-            child: ClipOval(
-              child: Image(
-                image: imageProvider,
-                fit: app.customImagePath != null ? BoxFit.cover : BoxFit.contain,
-                frameBuilder: (context, child, frame, wasSynchronouslyLoaded) {
-                  if (wasSynchronouslyLoaded || frame != null) return child;
-                  return Center(
-                    child: CircularProgressIndicator(
-                      strokeWidth: 2,
-                      color: theme.primaryColor,
-                    ),
-                  );
-                },
-              ),
-            ),
-          ),
-        ),
-        if (showLabel) ...[
-          SizedBox(height: 8 * customization.spacingMultiplier),
-          Flexible(
-            child: Container(
-              padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 2),
-              decoration: theme.mood == AppMood.hologram
-                  ? BoxDecoration(
-                      color: Colors.black26,
-                      borderRadius: BorderRadius.circular(4),
-                      border: Border.all(
-                        color: theme.primaryColor.withOpacity(0.3),
-                        width: 0.5,
-                      ),
-                    )
-                  : null,
-              child: Text(
-                app.label,
-                style: TextStyle(
-                  color: theme.mood == AppMood.hologram
-                      ? theme.primaryColor
-                      : Colors.black87,
-                  fontSize: 10 * customization.textSizeMultiplier,
-                  fontWeight: FontWeight.bold,
-                  shadows: [
-                    Shadow(color: theme.backgroundColor, blurRadius: 2),
-                    if (theme.mood == AppMood.hologram)
-                      Shadow(
-                        color: theme.primaryColor.withOpacity(0.5),
-                        blurRadius: 8,
-                      ),
-                  ],
-                ),
-                overflow: TextOverflow.ellipsis,
-              ),
-            ),
-          ),
-        ],
-      ],
-    );
-  }
-}
-
 class FloatingAppIcon extends ConsumerStatefulWidget {
   final AppInfo app;
   final bool isFloating;
@@ -471,7 +331,6 @@ class AppIconContent extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final theme = ref.watch(themeMoodProvider);
-    final iconStyle = ref.watch(iconStyleProvider).value ?? AppIconStyle.box;
     final isUploading = ref.watch(uploadingIconsProvider).contains(app.packageName);
 
     if (isUploading) {
@@ -491,58 +350,34 @@ class AppIconContent extends ConsumerWidget {
       final imageFile = File(app.customImagePath!);
       if (imageFile.existsSync()) {
         final imageProvider = FileImage(imageFile);
-        return iconStyle == AppIconStyle.box
-            ? StyledAppIcon(
-                app: app,
-                theme: theme,
-                imageProvider: imageProvider,
-                showLabel: showLabel,
-                size: size,
-              )
-            : StyledAppIconTwo(
-                app: app,
-                theme: theme,
-                imageProvider: imageProvider,
-                showLabel: showLabel,
-                size: size,
-              );
+        return StyledAppIcon(
+          app: app,
+          theme: theme,
+          imageProvider: imageProvider,
+          showLabel: showLabel,
+          size: size,
+        );
       }
     }
 
     final processedIcon = ref.watch(processedIconProvider(app.iconBytes));
 
     return processedIcon.when(
-      data: (iconBytes) => iconStyle == AppIconStyle.box
-          ? StyledAppIcon(
-              app: app,
-              theme: theme,
-              imageProvider: MemoryImage(iconBytes),
-              showLabel: showLabel,
-              size: size,
-            )
-          : StyledAppIconTwo(
-              app: app,
-              theme: theme,
-              imageProvider: MemoryImage(iconBytes),
-              showLabel: showLabel,
-              size: size,
-            ),
+      data: (iconBytes) => StyledAppIcon(
+        app: app,
+        theme: theme,
+        imageProvider: MemoryImage(iconBytes),
+        showLabel: showLabel,
+        size: size,
+      ),
       loading: () => const Center(child: CircularProgressIndicator()),
-      error: (err, _) => iconStyle == AppIconStyle.box
-          ? StyledAppIcon(
-              app: app,
-              theme: theme,
-              imageProvider: MemoryImage(app.iconBytes),
-              showLabel: showLabel,
-              size: size,
-            )
-          : StyledAppIconTwo(
-              app: app,
-              theme: theme,
-              imageProvider: MemoryImage(app.iconBytes),
-              showLabel: showLabel,
-              size: size,
-            ),
+      error: (err, _) => StyledAppIcon(
+        app: app,
+        theme: theme,
+        imageProvider: MemoryImage(app.iconBytes),
+        showLabel: showLabel,
+        size: size,
+      ),
     );
   }
 }
