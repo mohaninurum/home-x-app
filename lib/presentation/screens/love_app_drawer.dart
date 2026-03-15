@@ -122,12 +122,22 @@ class _LoveAppDrawerState extends ConsumerState<LoveAppDrawer> {
         final picker = ImagePicker();
         final pickedFile = await picker.pickImage(source: ImageSource.gallery);
         if (pickedFile != null) {
-          await ref.read(iconImageProvider.notifier).setCustomIcon(app.packageName, pickedFile.path);
+          // Set loading state
+          ref.read(uploadingIconsProvider.notifier).update((state) => {...state, app.packageName});
+          try {
+            await ref.read(iconImageProvider.notifier).setCustomIcon(app.packageName, pickedFile.path);
+          } finally {
+            // Clear loading state
+            ref.read(uploadingIconsProvider.notifier).update((state) => state.where((e) => e != app.packageName).toSet());
+          }
         }
       } else if (result == 'reset_icon') {
         await ref.read(iconImageProvider.notifier).clearCustomIcon(app.packageName);
       } else if (result == 'uninstall') {
-        nativeService.uninstallApp(app.packageName);
+        await nativeService.uninstallApp(app.packageName);
+        if (mounted) {
+          widget.onClose?.call();
+        }
       }
     };
   }

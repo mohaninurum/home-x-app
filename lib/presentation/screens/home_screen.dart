@@ -55,6 +55,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
   }
 
   void _toggleDrawer() {
+     FocusScope.of(context).unfocus();
     if (_drawerController.isCompleted) {
       _drawerController.reverse();
     } else {
@@ -190,9 +191,10 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
                           fit: StackFit.expand,
                           children: [
                             // Draggable Custom Clock
+                            if (ref.watch(clockCustomizationProvider).value?.showClock ?? true)
                             Positioned(
-                              top: widgetPositions['clock']?.dy ?? 8,
-                              left: widgetPositions['clock']?.dx ?? 20,
+                              top: widgetPositions['clock']?.dy ?? (MediaQuery.of(context).padding.top + 60.sh(context)),
+                              left: widgetPositions['clock']?.dx ?? (MediaQuery.of(context).size.width / 2 - 75.sw(context)),
                               child: Draggable(
                                 maxSimultaneousDrags: isEditMode ? 1 : 0,
                                 feedback: Material(
@@ -246,7 +248,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
                               FloatingAppIcon(
                                 app: app,
                                 isFloating: true,
-                                showLabel: false,
+                                showLabel: app.customImagePath != null, // Show title for custom icons
                                 onLongPress: () async {
                                   final theme = ref.read(themeMoodProvider);
                                   final RenderBox overlay = Overlay.of(context).context.findRenderObject() as RenderBox;
@@ -641,6 +643,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
                       size: 30.sw(context),
                     ),
                     onPressed: () {
+                       FocusScope.of(context).unfocus();
                       Navigator.push(
                         context,
                         MaterialPageRoute(

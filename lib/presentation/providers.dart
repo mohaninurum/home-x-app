@@ -47,6 +47,8 @@ final nativeAppServiceProvider = Provider<NativeAppService>((ref) {
   return NativeAppService();
 });
 
+final uploadingIconsProvider = StateProvider<Set<String>>((ref) => {});
+
 /// Provider for app icon style settings
 class IconStyleNotifier extends AsyncNotifier<AppIconStyle> {
   static const _key = 'app_icon_style';

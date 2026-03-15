@@ -405,6 +405,43 @@ class SettingsScreen extends ConsumerWidget {
             ),
           ),
 
+          SizedBox(height: 12.sh(context)),
+
+          // Clock Visibility Toggle
+          Container(
+            decoration: BoxDecoration(
+              color: theme.primaryColor.withOpacity(0.05),
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(color: theme.primaryColor.withOpacity(0.2)),
+            ),
+            child: Consumer(
+              builder: (context, ref, _) {
+                final customization = ref.watch(clockCustomizationProvider).value ?? const ClockCustomization();
+                return SwitchListTile(
+                  secondary: Icon(Icons.access_time, color: theme.primaryColor),
+                  title: Text(
+                    'Show Watch',
+                    style: TextStyle(color: theme.primaryColor, fontSize: 16.wsp(context)),
+                  ),
+                  subtitle: Text(
+                    'Display the analog clock on Home Screen',
+                    style: TextStyle(
+                      color: theme.primaryColor.withOpacity(0.7),
+                      fontSize: 12.wsp(context),
+                    ),
+                  ),
+                  value: customization.showClock,
+                  activeColor: theme.secondaryColor,
+                  onChanged: (value) {
+                    ref.read(clockCustomizationProvider.notifier).updateCustomization(
+                      customization.copyWith(showClock: value),
+                    );
+                  },
+                );
+              },
+            ),
+          ),
+
           SizedBox(height: 24.sh(context)),
           
           // Drawer Grid Size Section
