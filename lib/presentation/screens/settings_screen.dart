@@ -8,6 +8,7 @@ import '../providers.dart';
 import '../../core/responsive_utils.dart';
 import 'icon_customization_screen.dart';
 import 'clock_customization_screen.dart';
+import '../../domain/clock_customization.dart';
 
 class SettingsScreen extends ConsumerWidget {
   const SettingsScreen({super.key});
@@ -338,9 +339,19 @@ class SettingsScreen extends ConsumerWidget {
             ),
           ),
 
-          SizedBox(height: 12.sh(context)),
+          SizedBox(height: 24.sh(context)),
 
-          // Customization Toggles
+          // --- Home Screen Section ---
+          Text(
+            'HOME SCREEN',
+            style: TextStyle(
+              color: theme.primaryColor.withOpacity(0.7),
+              fontSize: 12.wsp(context),
+              fontWeight: FontWeight.bold,
+              letterSpacing: 1.5.sw(context),
+            ),
+          ),
+          SizedBox(height: 8.sh(context)),
           Container(
             decoration: BoxDecoration(
               color: theme.primaryColor.withOpacity(0.05),
@@ -349,6 +360,7 @@ class SettingsScreen extends ConsumerWidget {
             ),
             child: Column(
               children: [
+                // Add Button Toggle
                 Consumer(
                   builder: (context, ref, _) {
                     final showAddBtn = ref.watch(addButtonVisibilityProvider).value ?? true;
@@ -366,79 +378,61 @@ class SettingsScreen extends ConsumerWidget {
                     );
                   },
                 ),
-              ],
-            ),
-          ),
-
-          SizedBox(height: 12.sh(context)),
-
-          // Heart Animation Toggle
-          Container(
-            decoration: BoxDecoration(
-              color: theme.primaryColor.withOpacity(0.05),
-              borderRadius: BorderRadius.circular(12),
-              border: Border.all(color: theme.primaryColor.withOpacity(0.2)),
-            ),
-            child: Consumer(
-              builder: (context, ref, _) {
-                final showHearts = ref.watch(heartAnimationProvider).value ?? true;
-                return SwitchListTile(
-                  secondary: Icon(Icons.favorite, color: theme.primaryColor),
-                  title: Text(
-                    'Heart Animation',
-                    style: TextStyle(color: theme.primaryColor, fontSize: 16.wsp(context)),
-                  ),
-                  subtitle: Text(
-                    'Show floating hearts on Home Screen',
-                    style: TextStyle(
-                      color: theme.primaryColor.withOpacity(0.7),
-                      fontSize: 12.wsp(context),
-                    ),
-                  ),
-                  value: showHearts,
-                  activeColor: theme.secondaryColor,
-                  onChanged: (value) {
-                    ref.read(heartAnimationProvider.notifier).setEnabled(value);
-                  },
-                );
-              },
-            ),
-          ),
-
-          SizedBox(height: 12.sh(context)),
-
-          // Clock Visibility Toggle
-          Container(
-            decoration: BoxDecoration(
-              color: theme.primaryColor.withOpacity(0.05),
-              borderRadius: BorderRadius.circular(12),
-              border: Border.all(color: theme.primaryColor.withOpacity(0.2)),
-            ),
-            child: Consumer(
-              builder: (context, ref, _) {
-                final customization = ref.watch(clockCustomizationProvider).value ?? const ClockCustomization();
-                return SwitchListTile(
-                  secondary: Icon(Icons.access_time, color: theme.primaryColor),
-                  title: Text(
-                    'Show Watch',
-                    style: TextStyle(color: theme.primaryColor, fontSize: 16.wsp(context)),
-                  ),
-                  subtitle: Text(
-                    'Display the analog clock on Home Screen',
-                    style: TextStyle(
-                      color: theme.primaryColor.withOpacity(0.7),
-                      fontSize: 12.wsp(context),
-                    ),
-                  ),
-                  value: customization.showClock,
-                  activeColor: theme.secondaryColor,
-                  onChanged: (value) {
-                    ref.read(clockCustomizationProvider.notifier).updateCustomization(
-                      customization.copyWith(showClock: value),
+                Divider(height: 1, color: theme.primaryColor.withOpacity(0.1)),
+                // Heart Animation Toggle
+                Consumer(
+                  builder: (context, ref, _) {
+                    final showHearts = ref.watch(heartAnimationProvider).value ?? true;
+                    return SwitchListTile(
+                      secondary: Icon(Icons.favorite, color: theme.primaryColor),
+                      title: Text(
+                        'Heart Animation',
+                        style: TextStyle(color: theme.primaryColor, fontSize: 16.wsp(context)),
+                      ),
+                      subtitle: Text(
+                        'Show floating hearts',
+                        style: TextStyle(
+                          color: theme.primaryColor.withOpacity(0.7),
+                          fontSize: 12.wsp(context),
+                        ),
+                      ),
+                      value: showHearts,
+                      activeColor: theme.secondaryColor,
+                      onChanged: (value) {
+                        ref.read(heartAnimationProvider.notifier).setEnabled(value);
+                      },
                     );
                   },
-                );
-              },
+                ),
+                Divider(height: 1, color: theme.primaryColor.withOpacity(0.1)),
+                // Clock Visibility Toggle
+                Consumer(
+                  builder: (context, ref, _) {
+                    final customization = ref.watch(clockCustomizationProvider).value ?? const ClockCustomization();
+                    return SwitchListTile(
+                      secondary: Icon(Icons.access_time, color: theme.primaryColor),
+                      title: Text(
+                        'Show Watch',
+                        style: TextStyle(color: theme.primaryColor, fontSize: 16.wsp(context)),
+                      ),
+                      subtitle: Text(
+                        'Display analog clock',
+                        style: TextStyle(
+                          color: theme.primaryColor.withOpacity(0.7),
+                          fontSize: 12.wsp(context),
+                        ),
+                      ),
+                      value: customization.showClock,
+                      activeColor: theme.secondaryColor,
+                      onChanged: (value) {
+                        ref.read(clockCustomizationProvider.notifier).updateCustomization(
+                          customization.copyWith(showClock: value),
+                        );
+                      },
+                    );
+                  },
+                ),
+              ],
             ),
           ),
 

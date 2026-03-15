@@ -153,18 +153,10 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
                   },
                   onVerticalDragEnd: (details) {
                     if (details.primaryVelocity != null) {
-                      if (details.primaryVelocity! < 0) {
+                      if (details.primaryVelocity! < -300) {
                         // Swipe UP
                         _toggleDrawer();
-                      } else if (details.primaryVelocity! > 1000) {
-                        // Fast Swipe DOWN
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (context) => const SecretGalleryScreen(),
-                          ),
-                        );
-                      } else if (details.primaryVelocity! > 0) {
+                      } else if (details.primaryVelocity! > 300) {
                         // Swipe DOWN
                         ref.read(nativeAppServiceProvider).openNotificationPanel();
                       }

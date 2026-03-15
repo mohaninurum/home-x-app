@@ -11,6 +11,8 @@ class CustomAnalogClockWidget extends ConsumerWidget {
 
   const CustomAnalogClockWidget({super.key, this.size = 150});
 
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
     final theme = ref.watch(themeMoodProvider);
     final customization = ref.watch(clockCustomizationProvider).value ?? const ClockCustomization();
 
