@@ -470,6 +470,20 @@ class AppIconContent extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final theme = ref.watch(themeMoodProvider);
     final iconStyle = ref.watch(iconStyleProvider).value ?? AppIconStyle.box;
+    final isUploading = ref.watch(uploadingIconsProvider).contains(app.packageName);
+
+    if (isUploading) {
+      return SizedBox(
+        width: size,
+        height: size,
+        child: Center(
+          child: CircularProgressIndicator(
+            color: theme.primaryColor,
+            strokeWidth: 3,
+          ),
+        ),
+      );
+    }
 
     if (app.customImagePath != null) {
       final imageFile = File(app.customImagePath!);

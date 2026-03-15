@@ -400,6 +400,35 @@ class _ClockCustomizationScreenState extends ConsumerState<ClockCustomizationScr
                         );
                       }),
                     ),
+
+                    const SizedBox(height: 16),
+                    Text('BORDER', style: TextStyle(color: theme.primaryColor.withOpacity(0.7), fontSize: 12, fontWeight: FontWeight.bold)),
+                    ListTile(
+                      title: Text('Border Color', style: TextStyle(color: theme.primaryColor)),
+                      trailing: Container(width: 24, height: 24, decoration: BoxDecoration(color: currentCustomization.borderColorValue != null ? Color(currentCustomization.borderColorValue!) : null, border: Border.all())),
+                      onTap: () => _showColorPicker(context, 'Border Color', currentCustomization.borderColorValue, (color) {
+                        ref.read(clockCustomizationProvider.notifier).updateCustomization(
+                          currentCustomization.copyWith(borderColorValue: color, clearBorderColor: color == null)
+                        );
+                      }),
+                    ),
+                    Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 16),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text('Width: ${currentCustomization.borderWidth.toStringAsFixed(1)}', style: TextStyle(color: theme.primaryColor)),
+                          Slider(
+                            value: currentCustomization.borderWidth,
+                            min: 0,
+                            max: 10,
+                            divisions: 100,
+                            activeColor: theme.secondaryColor,
+                            onChanged: (val) => ref.read(clockCustomizationProvider.notifier).updateCustomization(currentCustomization.copyWith(borderWidth: val)),
+                          ),
+                        ],
+                      ),
+                    ),
                     
                     const SizedBox(height: 24),
                     ElevatedButton(
