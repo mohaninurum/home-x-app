@@ -106,6 +106,27 @@ class MainActivity: FlutterFragmentActivity() {
                         }
                     }
 
+                    "openNotificationPanel" -> {
+                        try {
+                            val statusBarService = getSystemService("statusbar")
+                            val statusBarManager = Class.forName("android.app.StatusBarManager")
+                            val expandMethod = statusBarManager.getMethod("expandNotificationsPanel")
+                            expandMethod.invoke(statusBarService)
+                            result.success(true)
+                        } catch (e: Exception) {
+                            try {
+                                // Fallback for various Android versions
+                                val statusBarService = getSystemService("statusbar")
+                                val statusBarManager = Class.forName("android.app.StatusBarManager")
+                                val expandMethod = statusBarManager.getMethod("expand")
+                                expandMethod.invoke(statusBarService)
+                                result.success(true)
+                            } catch (e2: Exception) {
+                                result.error("OPEN_NOTIFICATION_ERROR", e2.message, null)
+                            }
+                        }
+                    }
+
                     else -> result.notImplemented()
                 }
             }

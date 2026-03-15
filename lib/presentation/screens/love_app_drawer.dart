@@ -310,7 +310,7 @@ class _LoveAppDrawerState extends ConsumerState<LoveAppDrawer> {
                   final app = filteredApps[index];
                   final isOnHome = homeApps.contains(app.packageName);
 
-                  return Draggable<AppInfo>(
+                  return LongPressDraggable<AppInfo>(
                     data: app,
                     feedback: Material(
                       color: Colors.transparent,
