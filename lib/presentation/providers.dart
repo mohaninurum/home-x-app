@@ -678,4 +678,98 @@ final gridSizeProvider = AsyncNotifierProvider<GridSizeNotifier, int>(() {
   return GridSizeNotifier();
 });
 
+/// Settings for Home Screen Neo Moving Border
+class HomeScreenNeoSettings {
+  final bool enabled;
+  final double borderWidth;
+  final int primaryColorValue;
+  final int secondaryColorValue;
+  final double speed;
+
+  const HomeScreenNeoSettings({
+    this.enabled = false,
+    this.borderWidth = 4.0,
+    this.primaryColorValue = 0xFFFF1E1E, // Red
+    this.secondaryColorValue = 0xFF1E90FF, // Blue
+    this.speed = 1.0,
+  });
+
+  Map<String, dynamic> toMap() {
+    return {
+      'enabled': enabled,
+      'borderWidth': borderWidth,
+      'primaryColorValue': primaryColorValue,
+      'secondaryColorValue': secondaryColorValue,
+      'speed': speed,
+    };
+  }
+
+  factory HomeScreenNeoSettings.fromMap(Map<String, dynamic> map) {
+    return HomeScreenNeoSettings(
+      enabled: map['enabled'] as bool? ?? false,
+      borderWidth: (map['borderWidth'] as num?)?.toDouble() ?? 4.0,
+      primaryColorValue: map['primaryColorValue'] as int? ?? 0xFFFF1E1E,
+      secondaryColorValue: map['secondaryColorValue'] as int? ?? 0xFF1E90FF,
+      speed: (map['speed'] as num?)?.toDouble() ?? 1.0,
+    );
+  }
+
+  HomeScreenNeoSettings copyWith({
+    bool? enabled,
+    double? borderWidth,
+    int? primaryColorValue,
+    int? secondaryColorValue,
+    double? speed,
+  }) {
+    return HomeScreenNeoSettings(
+      enabled: enabled ?? this.enabled,
+      borderWidth: borderWidth ?? this.borderWidth,
+      primaryColorValue: primaryColorValue ?? this.primaryColorValue,
+      secondaryColorValue: secondaryColorValue ?? this.secondaryColorValue,
+      speed: speed ?? this.speed,
+    );
+  }
+}
+
+class NeoScreenBorderNotifier extends AsyncNotifier<HomeScreenNeoSettings> {
+  static const _key = 'home_screen_neo_settings';
+
+  @override
+  Future<HomeScreenNeoSettings> build() async {
+    final prefs = await SharedPreferences.getInstance();
+    final jsonStr = prefs.getString(_key);
+    if (jsonStr != null) {
+      try {
+        return HomeScreenNeoSettings.fromMap(jsonDecode(jsonStr));
+      } catch (_) {}
+    }
+    return const HomeScreenNeoSettings();
+  }
+
+  Future<void> updateSettings(HomeScreenNeoSettings settings) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString(_key, jsonEncode(settings.toMap()));
+    state = AsyncData(settings);
+  }
+
+  Future<void> setEnabled(bool enabled) async {
+    final current = state.value ?? const HomeScreenNeoSettings();
+    await updateSettings(current.copyWith(enabled: enabled));
+  }
+
+  Future<void> setBorderWidth(double width) async {
+    final current = state.value ?? const HomeScreenNeoSettings();
+    await updateSettings(current.copyWith(borderWidth: width));
+  }
+
+  Future<void> setSpeed(double speed) async {
+    final current = state.value ?? const HomeScreenNeoSettings();
+    await updateSettings(current.copyWith(speed: speed));
+  }
+}
+
+final homeScreenNeoProvider = AsyncNotifierProvider<NeoScreenBorderNotifier, HomeScreenNeoSettings>(() {
+  return NeoScreenBorderNotifier();
+});
+
 

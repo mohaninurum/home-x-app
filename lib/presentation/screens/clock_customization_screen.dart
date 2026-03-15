@@ -6,6 +6,7 @@ import '../providers.dart';
 import 'package:flutter_colorpicker/flutter_colorpicker.dart';
 import '../theme_provider.dart';
 import '../../domain/clock_customization.dart';
+import '../widgets/custom_analog_clock_widget.dart';
 import '../../animated_analog_clock/animated_analog_clock.dart';
 
 class ClockCustomizationScreen extends ConsumerStatefulWidget {
@@ -183,22 +184,9 @@ class _ClockCustomizationScreenState extends ConsumerState<ClockCustomizationScr
                       ),
                       Expanded(
                         child: IgnorePointer(
-                          child: AnimatedAnalogClock(
+                          child: CustomAnalogClockWidget(
                             size: 100,
-                            dialType: customization.dialType,
-                            backgroundColor: customization.backgroundColorValue != null ? Color(customization.backgroundColorValue!) : Colors.transparent,
-                            hourHandColor: customization.hourHandColorValue != null ? Color(customization.hourHandColorValue!) : null,
-                            minuteHandColor: customization.minuteHandColorValue != null ? Color(customization.minuteHandColorValue!) : null,
-                            secondHandColor: Color(customization.secondHandColorValue),
-                            hourDashColor: customization.hourDashColorValue != null ? Color(customization.hourDashColorValue!) : null,
-                            minuteDashColor: customization.minuteDashColorValue != null ? Color(customization.minuteDashColorValue!) : null,
-                            centerDotColor: customization.centerDotColorValue != null ? Color(customization.centerDotColorValue!) : null,
-                            numberColor: customization.numberColorValue != null ? Color(customization.numberColorValue!) : null,
-                            showSecondHand: customization.showSecondHand,
-                            extendHourHand: customization.extendHourHand,
-                            extendMinuteHand: customization.extendMinuteHand,
-                            extendSecondHand: customization.extendSecondHand,
-                            backgroundImage: customization.backgroundImagePath != null ? FileImage(File(customization.backgroundImagePath!)) : null,
+                            customizationOverride: customization,
                           ),
                         ),
                       ),
@@ -223,22 +211,9 @@ class _ClockCustomizationScreenState extends ConsumerState<ClockCustomizationScr
                     bottomRight: Radius.circular(16),
                   ),
                 ),
-                child: AnimatedAnalogClock(
+                child: CustomAnalogClockWidget(
                   size: 150,
-                  dialType: currentCustomization.dialType,
-                  backgroundColor: currentCustomization.backgroundColorValue != null ? Color(currentCustomization.backgroundColorValue!) : Colors.transparent,
-                  hourHandColor: currentCustomization.hourHandColorValue != null ? Color(currentCustomization.hourHandColorValue!) : null,
-                  minuteHandColor: currentCustomization.minuteHandColorValue != null ? Color(currentCustomization.minuteHandColorValue!) : null,
-                  secondHandColor: Color(currentCustomization.secondHandColorValue),
-                  hourDashColor: currentCustomization.hourDashColorValue != null ? Color(currentCustomization.hourDashColorValue!) : null,
-                  minuteDashColor: currentCustomization.minuteDashColorValue != null ? Color(currentCustomization.minuteDashColorValue!) : null,
-                  centerDotColor: currentCustomization.centerDotColorValue != null ? Color(currentCustomization.centerDotColorValue!) : null,
-                  numberColor: currentCustomization.numberColorValue != null ? Color(currentCustomization.numberColorValue!) : null,
-                  showSecondHand: currentCustomization.showSecondHand,
-                  extendHourHand: currentCustomization.extendHourHand,
-                  extendMinuteHand: currentCustomization.extendMinuteHand,
-                  extendSecondHand: currentCustomization.extendSecondHand,
-                  backgroundImage: currentCustomization.backgroundImagePath != null ? FileImage(File(currentCustomization.backgroundImagePath!)) : null,
+                  customizationOverride: currentCustomization,
                 ),
               ),
               
@@ -467,6 +442,32 @@ class _ClockCustomizationScreenState extends ConsumerState<ClockCustomizationScr
                         ],
                       ),
                     ),
+
+                    const SizedBox(height: 16),
+                    Text('NEO EFFECT', style: TextStyle(color: theme.primaryColor.withOpacity(0.7), fontSize: 12, fontWeight: FontWeight.bold)),
+                    SwitchListTile(
+                      title: Text('Enable Neo Effect', style: TextStyle(color: theme.primaryColor)),
+                      value: currentCustomization.neoEffectEnabled,
+                      onChanged: (val) => ref.read(clockCustomizationProvider.notifier).updateCustomization(currentCustomization.copyWith(neoEffectEnabled: val)),
+                    ),
+                    if (currentCustomization.neoEffectEnabled)
+                      Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 16),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text('Neo Border Width: ${currentCustomization.neoBorderWidth.toStringAsFixed(1)}', style: TextStyle(color: theme.primaryColor)),
+                            Slider(
+                              value: currentCustomization.neoBorderWidth,
+                              min: 1,
+                              max: 20,
+                              divisions: 19,
+                              activeColor: theme.secondaryColor,
+                              onChanged: (val) => ref.read(clockCustomizationProvider.notifier).updateCustomization(currentCustomization.copyWith(neoBorderWidth: val)),
+                            ),
+                          ],
+                        ),
+                      ),
                     
                     const SizedBox(height: 24),
                     ElevatedButton(
