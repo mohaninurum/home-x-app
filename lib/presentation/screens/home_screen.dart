@@ -165,12 +165,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
                         );
                       } else if (details.primaryVelocity! > 0) {
                         // Swipe DOWN
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (context) => const CoupleModeScreen(),
-                          ),
-                        );
+                        ref.read(nativeAppServiceProvider).openNotificationPanel();
                       }
                     }
                   },
@@ -568,11 +563,13 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
                                   builder: (context, ref, _) {
                                     final allApps =
                                         ref.watch(appsProvider).value ?? [];
+                                    final hiddenApps = ref.watch(hiddenAppsProvider).value ?? {};
                                     final results = allApps
                                         .where(
                                           (app) => app.label
                                               .toLowerCase()
-                                              .contains(_searchQuery),
+                                              .contains(_searchQuery) &&
+                                              !hiddenApps.contains(app.packageName),
                                         )
                                         .toList();
 
