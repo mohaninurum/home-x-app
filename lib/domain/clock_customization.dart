@@ -22,6 +22,8 @@ class ClockCustomization {
   final bool showClock;
   final double borderWidth;
   final int? borderColorValue;
+  final bool neoEffectEnabled;
+  final double neoBorderWidth;
 
   const ClockCustomization({
     this.dialType = DialType.dashes,
@@ -43,6 +45,8 @@ class ClockCustomization {
     this.showClock = true,
     this.borderWidth = 0.0,
     this.borderColorValue,
+    this.neoEffectEnabled = false,
+    this.neoBorderWidth = 2.0,
   });
 
   ClockCustomization copyWith({
@@ -65,6 +69,8 @@ class ClockCustomization {
     bool? showClock,
     double? borderWidth,
     int? borderColorValue,
+    bool? neoEffectEnabled,
+    double? neoBorderWidth,
     bool clearBackgroundImage = false,
     bool clearBackgroundColor = false,
     bool clearHourHandColor = false,
@@ -95,6 +101,8 @@ class ClockCustomization {
       showClock: showClock ?? this.showClock,
       borderWidth: borderWidth ?? this.borderWidth,
       borderColorValue: clearBorderColor ? null : (borderColorValue ?? this.borderColorValue),
+      neoEffectEnabled: neoEffectEnabled ?? this.neoEffectEnabled,
+      neoBorderWidth: neoBorderWidth ?? this.neoBorderWidth,
     );
   }
 
@@ -119,6 +127,8 @@ class ClockCustomization {
       'showClock': showClock,
       'borderWidth': borderWidth,
       'borderColorValue': borderColorValue,
+      'neoEffectEnabled': neoEffectEnabled,
+      'neoBorderWidth': neoBorderWidth,
     };
   }
 
@@ -143,6 +153,8 @@ class ClockCustomization {
       showClock: map['showClock'] as bool? ?? true,
       borderWidth: (map['borderWidth'] as num?)?.toDouble() ?? 0.0,
       borderColorValue: map['borderColorValue'] as int?,
+      neoEffectEnabled: map['neoEffectEnabled'] as bool? ?? false,
+      neoBorderWidth: (map['neoBorderWidth'] as num?)?.toDouble() ?? 2.0,
     );
   }
 }

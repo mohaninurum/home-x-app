@@ -1,4 +1,5 @@
 import 'dart:io';
+import '../widgets/neo_moving_border.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:image_picker/image_picker.dart';
@@ -429,6 +430,125 @@ class SettingsScreen extends ConsumerWidget {
                           customization.copyWith(showClock: value),
                         );
                       },
+                    );
+                  },
+                ),
+              ],
+            ),
+          ),
+
+          SizedBox(height: 24.sh(context)),
+          
+          // Home Screen Neo Border Section
+          Text(
+            'HOME SCREEN NEO BORDER',
+            style: TextStyle(
+              color: theme.primaryColor.withOpacity(0.7),
+              fontSize: 12.wsp(context),
+              fontWeight: FontWeight.bold,
+              letterSpacing: 1.5.sw(context),
+            ),
+          ),
+          SizedBox(height: 8.sh(context)),
+          Container(
+            decoration: BoxDecoration(
+              color: theme.primaryColor.withOpacity(0.05),
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(color: theme.primaryColor.withOpacity(0.2)),
+            ),
+            child: Column(
+              children: [
+                Consumer(
+                  builder: (context, ref, _) {
+                    final neoSettings = ref.watch(homeScreenNeoProvider).value ?? const HomeScreenNeoSettings();
+                    return Column(
+                      children: [
+                        SwitchListTile(
+                          secondary: Icon(Icons.auto_awesome, color: theme.primaryColor),
+                          title: Text(
+                            'Enable Neo Border',
+                            style: TextStyle(color: theme.primaryColor, fontSize: 16.wsp(context)),
+                          ),
+                          value: neoSettings.enabled,
+                          activeColor: theme.secondaryColor,
+                          onChanged: (value) {
+                            ref.read(homeScreenNeoProvider.notifier).setEnabled(value);
+                          },
+                        ),
+                        if (neoSettings.enabled) ...[
+                          Padding(
+                            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  'Border Width: ${neoSettings.borderWidth.toStringAsFixed(1)}',
+                                  style: TextStyle(color: theme.primaryColor, fontSize: 14.wsp(context)),
+                                ),
+                                Slider(
+                                  value: neoSettings.borderWidth,
+                                  min: 1,
+                                  max: 20,
+                                  divisions: 19,
+                                  activeColor: theme.secondaryColor,
+                                  onChanged: (val) => ref.read(homeScreenNeoProvider.notifier).setBorderWidth(val),
+                                ),
+                                SizedBox(height: 8.sh(context)),
+                                Text(
+                                  'Animation Speed: ${neoSettings.speed.toStringAsFixed(1)}',
+                                  style: TextStyle(color: theme.primaryColor, fontSize: 14.wsp(context)),
+                                ),
+                                Slider(
+                                  value: neoSettings.speed,
+                                  min: 0.5,
+                                  max: 5.0,
+                                  divisions: 45,
+                                  activeColor: theme.secondaryColor,
+                                  onChanged: (val) => ref.read(homeScreenNeoProvider.notifier).setSpeed(val),
+                                ),
+                                SizedBox(height: 16.sh(context)),
+                                // Preview
+                                Text(
+                                  'Preview',
+                                  style: TextStyle(
+                                    color: theme.primaryColor.withOpacity(0.7),
+                                    fontSize: 12.wsp(context),
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                ),
+                                SizedBox(height: 8.sh(context)),
+                                Center(
+                                  child: Container(
+                                    width: 200.sw(context),
+                                    height: 120.sh(context),
+                                    clipBehavior: Clip.antiAlias,
+                                    decoration: BoxDecoration(
+                                      borderRadius: BorderRadius.circular(12),
+                                      color: Colors.black12,
+                                    ),
+                                    child: NeoMovingBorder(
+                                      borderWidth: neoSettings.borderWidth,
+                                      primaryColor: Color(neoSettings.primaryColorValue),
+                                      secondaryColor: Color(neoSettings.secondaryColorValue),
+                                      speed: neoSettings.speed,
+                                      child: Center(
+                                        child: Text(
+                                          'PREVIEW',
+                                          style: TextStyle(
+                                            color: theme.primaryColor.withOpacity(0.5),
+                                            fontWeight: FontWeight.bold,
+                                          ),
+                                        ),
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                                SizedBox(height: 16.sh(context)),
+                              ],
+                            ),
+                          ),
+                        ],
+                      ],
                     );
                   },
                 ),

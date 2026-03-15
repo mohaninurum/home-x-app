@@ -258,18 +258,20 @@ class StyledAppIconTwo extends ConsumerWidget {
           ),
           child: Container(
             margin: EdgeInsets.all(app.customImagePath != null ? 0 : scaledSize * 0.12),
-            child: Image(
-              image: imageProvider,
-              fit: app.customImagePath != null ? BoxFit.cover : BoxFit.contain,
-              frameBuilder: (context, child, frame, wasSynchronouslyLoaded) {
-                if (wasSynchronouslyLoaded || frame != null) return child;
-                return Center(
-                  child: CircularProgressIndicator(
-                    strokeWidth: 2,
-                    color: theme.primaryColor,
-                  ),
-                );
-              },
+            child: ClipOval(
+              child: Image(
+                image: imageProvider,
+                fit: app.customImagePath != null ? BoxFit.cover : BoxFit.contain,
+                frameBuilder: (context, child, frame, wasSynchronouslyLoaded) {
+                  if (wasSynchronouslyLoaded || frame != null) return child;
+                  return Center(
+                    child: CircularProgressIndicator(
+                      strokeWidth: 2,
+                      color: theme.primaryColor,
+                    ),
+                  );
+                },
+              ),
             ),
           ),
         ),

@@ -6,32 +6,40 @@ import '../providers.dart';
 import '../theme_provider.dart';
 import '../../core/responsive_utils.dart';
 import '../../domain/clock_customization.dart';
+import 'neo_moving_border.dart';
 
 class CustomAnalogClockWidget extends ConsumerWidget {
   final double size;
+  final ClockCustomization? customizationOverride;
 
-  const CustomAnalogClockWidget({super.key, this.size = 150});
+  const CustomAnalogClockWidget({
+    super.key, 
+    this.size = 150,
+    this.customizationOverride,
+  });
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final theme = ref.watch(themeMoodProvider);
-    final customization = ref.watch(clockCustomizationProvider).value ?? const ClockCustomization();
+    final customization = customizationOverride ?? (ref.watch(clockCustomizationProvider).value ?? const ClockCustomization());
 
-    if (!customization.showClock) return const SizedBox.shrink();
+    if (!customization.showClock && customizationOverride == null) return const SizedBox.shrink();
 
-    return Container(
+    final clockWidget = Container(
       width: size.sw(context),
       height: size.sw(context),
       decoration: BoxDecoration(
         shape: BoxShape.circle,
-        border: customization.borderWidth > 0 
-            ? Border.all(
-                color: customization.borderColorValue != null 
-                    ? Color(customization.borderColorValue!) 
-                    : theme.primaryColor,
-                width: customization.borderWidth.sw(context),
-              )
-            : null,
+        border: customization.neoEffectEnabled 
+            ? null 
+            : (customization.borderWidth > 0 
+                ? Border.all(
+                    color: customization.borderColorValue != null 
+                        ? Color(customization.borderColorValue!) 
+                        : theme.primaryColor,
+                    width: (customization.borderWidth * (size / 150)).sw(context),
+                  )
+                : null),
       ),
       child: AnimatedAnalogClock(
         size: size.sw(context),
@@ -67,5 +75,17 @@ class CustomAnalogClockWidget extends ConsumerWidget {
         extendSecondHand: customization.extendSecondHand,
       ),
     );
+
+    if (customization.neoEffectEnabled) {
+      return NeoMovingBorder(
+        isCircle: true,
+        borderWidth: (customization.neoBorderWidth * (size / 150)).sw(context),
+        primaryColor: theme.secondaryColor,
+        secondaryColor: theme.primaryColor,
+        child: clockWidget,
+      );
+    }
+
+    return clockWidget;
   }
 }
