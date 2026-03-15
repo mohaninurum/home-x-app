@@ -55,6 +55,14 @@ class UploadingIconsNotifier extends Notifier<Set<String>> {
   @override
   Set<String> build() => {};
 
+  void startUploading(String packageName) {
+    state = {...state, packageName};
+  }
+
+  void stopUploading(String packageName) {
+    state = state.where((e) => e != packageName).toSet();
+  }
+
   void update(Set<String> newSet) {
     state = newSet;
   }

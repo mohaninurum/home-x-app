@@ -123,12 +123,12 @@ class _LoveAppDrawerState extends ConsumerState<LoveAppDrawer> {
         final pickedFile = await picker.pickImage(source: ImageSource.gallery);
         if (pickedFile != null) {
           // Set loading state
-          ref.read(uploadingIconsProvider.notifier).update((state) => {...state, app.packageName});
+          ref.read(uploadingIconsProvider.notifier).startUploading(app.packageName);
           try {
             await ref.read(iconImageProvider.notifier).setCustomIcon(app.packageName, pickedFile.path);
           } finally {
             // Clear loading state
-            ref.read(uploadingIconsProvider.notifier).update((state) => state.where((e) => e != app.packageName).toSet());
+            ref.read(uploadingIconsProvider.notifier).stopUploading(app.packageName);
           }
         }
       } else if (result == 'reset_icon') {
