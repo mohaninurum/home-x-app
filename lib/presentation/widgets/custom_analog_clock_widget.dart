@@ -3,6 +3,7 @@ import 'dart:io';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../animated_analog_clock/animated_analog_clock.dart';
 import '../providers.dart';
+import '../theme_provider.dart';
 import '../../core/responsive_utils.dart';
 import '../../domain/clock_customization.dart';
 
