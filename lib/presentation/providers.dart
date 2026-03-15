@@ -47,7 +47,18 @@ final nativeAppServiceProvider = Provider<NativeAppService>((ref) {
   return NativeAppService();
 });
 
-final uploadingIconsProvider = StateProvider<Set<String>>((ref) => {});
+final uploadingIconsProvider = NotifierProvider<UploadingIconsNotifier, Set<String>>(() {
+  return UploadingIconsNotifier();
+});
+
+class UploadingIconsNotifier extends Notifier<Set<String>> {
+  @override
+  Set<String> build() => {};
+
+  void update(Set<String> newSet) {
+    state = newSet;
+  }
+}
 
 /// Provider for app icon style settings
 class IconStyleNotifier extends AsyncNotifier<AppIconStyle> {

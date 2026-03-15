@@ -2,6 +2,7 @@ import 'dart:async';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_tts/flutter_tts.dart';
 import '../presentation/providers.dart';
+import 'clock_customization.dart';
 
 class HourlyChimeService {
   final FlutterTts _flutterTts = FlutterTts();
