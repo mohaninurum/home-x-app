@@ -32,7 +32,7 @@ class HourlyChimeService {
         if (_lastSpokenHour != now.hour) {
           final isEnabled = ref.read(clockCustomizationProvider).value?.hourlyChimeEnabled ?? false;
           if (isEnabled) {
-            _speakTimeInHindi(now.hour);
+            _speakTime(now.hour);
           }
           _lastSpokenHour = now.hour;
         }
@@ -62,9 +62,19 @@ class HourlyChimeService {
     return hindiNumbers[hour12] ?? hour12.toString();
   }
 
-  Future<void> _speakTimeInHindi(int hour24) async {
+  Future<void> _speakTime(int hour24) async {
+    final customization = ref.read(clockCustomizationProvider).value;
+    final speakType = customization?.speakType ?? SpeakType.hindi;
     final hindiWord = _getHindiHourWord(hour24);
-    await _flutterTts.speak("अभी $hindiWord बज रहे हैं");
+    
+    String text;
+    if (speakType == SpeakType.rathvi) {
+      text = "हिमी $hindiWord बज गया";
+    } else {
+      text = "अभी $hindiWord बज गए हैं";
+    }
+    
+    await _flutterTts.speak(text);
   }
 
   void dispose() {

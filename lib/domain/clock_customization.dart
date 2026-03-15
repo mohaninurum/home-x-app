@@ -1,5 +1,7 @@
 import '../../animated_analog_clock/animated_analog_clock.dart';
 
+enum SpeakType { hindi, rathvi }
+
 class ClockCustomization {
   final DialType dialType;
   final String? backgroundImagePath;
@@ -16,6 +18,7 @@ class ClockCustomization {
   final bool extendMinuteHand;
   final bool extendSecondHand;
   final bool hourlyChimeEnabled;
+  final SpeakType speakType;
   final bool showClock;
   final double borderWidth;
   final int? borderColorValue;
@@ -36,6 +39,7 @@ class ClockCustomization {
     this.extendMinuteHand = false,
     this.extendSecondHand = true,
     this.hourlyChimeEnabled = false,
+    this.speakType = SpeakType.hindi,
     this.showClock = true,
     this.borderWidth = 0.0,
     this.borderColorValue,
@@ -57,6 +61,7 @@ class ClockCustomization {
     bool? extendMinuteHand,
     bool? extendSecondHand,
     bool? hourlyChimeEnabled,
+    SpeakType? speakType,
     bool? showClock,
     double? borderWidth,
     int? borderColorValue,
@@ -86,6 +91,7 @@ class ClockCustomization {
       extendMinuteHand: extendMinuteHand ?? this.extendMinuteHand,
       extendSecondHand: extendSecondHand ?? this.extendSecondHand,
       hourlyChimeEnabled: hourlyChimeEnabled ?? this.hourlyChimeEnabled,
+      speakType: speakType ?? this.speakType,
       showClock: showClock ?? this.showClock,
       borderWidth: borderWidth ?? this.borderWidth,
       borderColorValue: clearBorderColor ? null : (borderColorValue ?? this.borderColorValue),
@@ -109,6 +115,7 @@ class ClockCustomization {
       'extendMinuteHand': extendMinuteHand,
       'extendSecondHand': extendSecondHand,
       'hourlyChimeEnabled': hourlyChimeEnabled,
+      'speakType': speakType.index,
       'showClock': showClock,
       'borderWidth': borderWidth,
       'borderColorValue': borderColorValue,
@@ -132,6 +139,7 @@ class ClockCustomization {
       extendMinuteHand: map['extendMinuteHand'] as bool? ?? false,
       extendSecondHand: map['extendSecondHand'] as bool? ?? true,
       hourlyChimeEnabled: map['hourlyChimeEnabled'] as bool? ?? false,
+      speakType: SpeakType.values[map['speakType'] as int? ?? 0],
       showClock: map['showClock'] as bool? ?? true,
       borderWidth: (map['borderWidth'] as num?)?.toDouble() ?? 0.0,
       borderColorValue: map['borderColorValue'] as int?,

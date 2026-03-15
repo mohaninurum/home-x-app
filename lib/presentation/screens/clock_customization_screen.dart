@@ -294,6 +294,44 @@ class _ClockCustomizationScreenState extends ConsumerState<ClockCustomizationScr
                       value: currentCustomization.hourlyChimeEnabled,
                       onChanged: (val) => ref.read(clockCustomizationProvider.notifier).updateCustomization(currentCustomization.copyWith(hourlyChimeEnabled: val)),
                     ),
+                    if (currentCustomization.hourlyChimeEnabled)
+                    Padding(
+                      padding: const EdgeInsets.only(left: 32.0, right: 16.0),
+                      child: Column(
+                        children: [
+                          RadioListTile<SpeakType>(
+                            title: Text('Hindi', style: TextStyle(color: theme.primaryColor, fontSize: 14)),
+                            value: SpeakType.hindi,
+                            groupValue: currentCustomization.speakType,
+                            activeColor: theme.secondaryColor,
+                            onChanged: (val) {
+                              if (val != null) {
+                                ref.read(clockCustomizationProvider.notifier).updateCustomization(
+                                  currentCustomization.copyWith(speakType: val)
+                                );
+                              }
+                            },
+                            controlAffinity: ListTileControlAffinity.trailing,
+                            dense: true,
+                          ),
+                          RadioListTile<SpeakType>(
+                            title: Text('Rathvi', style: TextStyle(color: theme.primaryColor, fontSize: 14)),
+                            value: SpeakType.rathvi,
+                            groupValue: currentCustomization.speakType,
+                            activeColor: theme.secondaryColor,
+                            onChanged: (val) {
+                              if (val != null) {
+                                ref.read(clockCustomizationProvider.notifier).updateCustomization(
+                                  currentCustomization.copyWith(speakType: val)
+                                );
+                              }
+                            },
+                            controlAffinity: ListTileControlAffinity.trailing,
+                            dense: true,
+                          ),
+                        ],
+                      ),
+                    ),
       
                     const SizedBox(height: 16),
                     Text('COLORS', style: TextStyle(color: theme.primaryColor.withOpacity(0.7), fontSize: 12, fontWeight: FontWeight.bold)),
