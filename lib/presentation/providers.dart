@@ -75,7 +75,11 @@ class IconStyleNotifier extends AsyncNotifier<AppIconStyle> {
   @override
   Future<AppIconStyle> build() async {
     final prefs = await SharedPreferences.getInstance();
-    final index = prefs.getInt(_key) ?? 0; // Default to box (0)
+    final index = prefs.getInt(_key) ?? 0;
+    // Safety check after removing circle: always return box if invalid
+    if (index >= AppIconStyle.values.length) {
+      return AppIconStyle.box;
+    }
     return AppIconStyle.values[index];
   }
 

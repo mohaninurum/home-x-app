@@ -1,4 +1,3 @@
-import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:image_picker/image_picker.dart';
@@ -211,9 +210,13 @@ class _ClockCustomizationScreenState extends ConsumerState<ClockCustomizationScr
                     bottomRight: Radius.circular(16),
                   ),
                 ),
-                child: CustomAnalogClockWidget(
-                  size: 150,
-                  customizationOverride: currentCustomization,
+                child: SizedBox(
+                  width: 200,
+                  height: 200,
+                  child: CustomAnalogClockWidget(
+                    size: 180,
+                    customizationOverride: currentCustomization,
+                  ),
                 ),
               ),
               

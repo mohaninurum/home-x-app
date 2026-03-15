@@ -7,16 +7,13 @@ import 'package:image_picker/image_picker.dart';
 import '../providers.dart';
 import '../../domain/app_info.dart';
 import '../../domain/hourly_chime_service.dart';
-import 'package:rive/rive.dart' as rive;
 import '../widgets/floating_app_icon.dart';
 import '../widgets/animated_hearts_background.dart';
 import '../widgets/custom_analog_clock_widget.dart';
 import '../widgets/notification_simulation_widget.dart';
 import 'hidden_apps_screen.dart';
-import 'couple_mode_screen.dart';
 import 'memory_timeline_screen.dart';
 import 'love_app_drawer.dart';
-import 'secret_gallery_screen.dart';
 import 'settings_screen.dart';
 import '../widgets/gesture_drawing_detector.dart';
 import '../widgets/app_tile_widget.dart';
@@ -561,7 +558,9 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
             _toggleDrawer();
           }
         },
-        child: mainContent,
+        child: SafeArea(
+          child: mainContent,
+        ),
       ),
     );
   }
