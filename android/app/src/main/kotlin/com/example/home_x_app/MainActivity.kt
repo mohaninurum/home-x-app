@@ -63,6 +63,22 @@ class MainActivity: FlutterFragmentActivity() {
                         }
                     }
 
+                    "openAppInfo" -> {
+                        val packageName = call.argument<String>("packageName")
+                        if (packageName != null) {
+                            try {
+                                val intent = Intent(android.provider.Settings.ACTION_APPLICATION_DETAILS_SETTINGS)
+                                intent.data = android.net.Uri.parse("package:$packageName")
+                                startActivity(intent)
+                                result.success(true)
+                            } catch (e: Exception) {
+                                result.error("OPEN_APP_INFO_ERROR", e.message, null)
+                            }
+                        } else {
+                            result.error("INVALID_PACKAGE", "Package name is null", null)
+                        }
+                    }
+
                     "startLockService" -> {
                         val serviceIntent = Intent(
                             this,

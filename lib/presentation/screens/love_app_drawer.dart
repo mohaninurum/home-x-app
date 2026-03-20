@@ -136,14 +136,53 @@ class _LoveAppDrawerState extends ConsumerState<LoveAppDrawer> {
                       nativeService.launchApp(app.packageName);
                     },
                     onLongPress: () {
-                      ref.read(homeAppsProvider.notifier).toggleApp(app.packageName);
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        SnackBar(
-                          content: Text(
-                            isOnHome ? 'Removed from Home' : 'Added to Home',
+                      showModalBottomSheet(
+                        context: context,
+                        backgroundColor: theme.backgroundColor,
+                        shape: const RoundedRectangleBorder(
+                          borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+                        ),
+                        builder: (context) => Container(
+                          padding: const EdgeInsets.symmetric(vertical: 20),
+                          child: Column(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              ListTile(
+                                leading: Icon(
+                                  isOnHome ? Icons.favorite_border : Icons.favorite,
+                                  color: theme.primaryColor,
+                                ),
+                                title: Text(
+                                  isOnHome ? 'Remove from Home' : 'Add to Home',
+                                  style: TextStyle(color: theme.primaryColor),
+                                ),
+                                onTap: () {
+                                  ref.read(homeAppsProvider.notifier).toggleApp(app.packageName);
+                                  Navigator.pop(context);
+                                  ScaffoldMessenger.of(context).showSnackBar(
+                                    SnackBar(
+                                      content: Text(
+                                        isOnHome ? 'Removed from Home' : 'Added to Home',
+                                      ),
+                                      backgroundColor: theme.primaryColor,
+                                      duration: const Duration(seconds: 1),
+                                    ),
+                                  );
+                                },
+                              ),
+                              ListTile(
+                                leading: Icon(Icons.info_outline, color: theme.primaryColor),
+                                title: Text(
+                                  'App Info',
+                                  style: TextStyle(color: theme.primaryColor),
+                                ),
+                                onTap: () {
+                                  Navigator.pop(context);
+                                  nativeService.openAppInfo(app.packageName);
+                                },
+                              ),
+                            ],
                           ),
-                          backgroundColor: theme.primaryColor,
-                          duration: const Duration(seconds: 1),
                         ),
                       );
                     },

@@ -26,6 +26,14 @@ class NativeAppService {
     }
   }
 
+  Future<void> openAppInfo(String packageName) async {
+    try {
+      await _channel.invokeMethod('openAppInfo', {'packageName': packageName});
+    } on PlatformException catch (e) {
+      print("Failed to open app info: '${e.message}'.");
+    }
+  }
+
   Future<void> startLockService() async {
     try {
       await _channel.invokeMethod('startLockService');
