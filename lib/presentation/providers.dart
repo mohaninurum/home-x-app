@@ -271,6 +271,15 @@ class HomeAppsNotifier extends AsyncNotifier<Set<String>> {
     await prefs.setDouble('${packageName}_x', x);
     await prefs.setDouble('${packageName}_y', y);
 
+    final currentApps = ref.read(appsProvider).value;
+    if (currentApps != null) {
+      try {
+        final app = currentApps.firstWhere((a) => a.packageName == packageName);
+        app.xPos = x;
+        app.yPos = y;
+      } catch (_) {}
+    }
+
     final current = state.value ?? {};
 
     if (!current.contains(packageName)) {
@@ -279,7 +288,7 @@ class HomeAppsNotifier extends AsyncNotifier<Set<String>> {
 
       state = AsyncData(updated);
     } else {
-      state = AsyncData(current);
+      state = AsyncData({...current});
     }
     // ref.invalidate(homeAppsListProvider);
     // ref.invalidate(homeAppsListProvider); // Removed to prevent circular dependency

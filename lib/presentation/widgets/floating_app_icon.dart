@@ -329,6 +329,15 @@ class _FloatingAppIconState extends ConsumerState<FloatingAppIcon> {
     yPos = widget.app.yPos;
   }
 
+  @override
+  void didUpdateWidget(FloatingAppIcon oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (widget.app.xPos != oldWidget.app.xPos || widget.app.yPos != oldWidget.app.yPos) {
+      xPos = widget.app.xPos;
+      yPos = widget.app.yPos;
+    }
+  }
+
   Future<void> _savePosition(double x, double y) async {
     final prefs = await SharedPreferences.getInstance();
     await prefs.setDouble('${widget.app.packageName}_x', x);

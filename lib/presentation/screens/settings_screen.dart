@@ -8,6 +8,7 @@ import '../providers.dart';
 import '../../core/responsive_utils.dart';
 import 'icon_customization_screen.dart';
 import 'clock_customization_screen.dart';
+import 'hidden_apps_screen.dart';
 
 class SettingsScreen extends ConsumerWidget {
   const SettingsScreen({super.key});
@@ -312,29 +313,61 @@ class SettingsScreen extends ConsumerWidget {
               borderRadius: BorderRadius.circular(12),
               border: Border.all(color: theme.primaryColor.withOpacity(0.2)),
             ),
-            child: ListTile(
-              leading: Icon(Icons.home_filled, color: theme.primaryColor),
-              title: Text(
-                'Set Default Launcher',
-                style: TextStyle(color: theme.primaryColor, fontSize: 16.wsp(context)),
-              ),
-              subtitle: Text(
-                'Make Home-X your main home screen',
-                style: TextStyle(
-                  color: theme.primaryColor.withOpacity(0.7),
-                  fontSize: 12,
+            child: Column(
+              children: [
+                ListTile(
+                  leading: Icon(Icons.home_filled, color: theme.primaryColor),
+                  title: Text(
+                    'Set Default Launcher',
+                    style: TextStyle(color: theme.primaryColor, fontSize: 16.wsp(context)),
+                  ),
+                  subtitle: Text(
+                    'Make Home-X your main home screen',
+                    style: TextStyle(
+                      color: theme.primaryColor.withOpacity(0.7),
+                      fontSize: 12,
+                    ),
+                  ),
+                  trailing: Icon(
+                    Icons.arrow_forward_ios,
+                    color: theme.primaryColor,
+                    size: 16.sw(context),
+                  ),
+                  onTap: () {
+                    ref
+                        .read(nativeAppServiceProvider)
+                        .openDefaultLauncherSettings();
+                  },
                 ),
-              ),
-              trailing: Icon(
-                Icons.arrow_forward_ios,
-                color: theme.primaryColor,
-                size: 16.sw(context),
-              ),
-              onTap: () {
-                ref
-                    .read(nativeAppServiceProvider)
-                    .openDefaultLauncherSettings();
-              },
+                Divider(color: theme.primaryColor.withOpacity(0.1), height: 1),
+                ListTile(
+                  leading: Icon(Icons.visibility_off, color: theme.primaryColor),
+                  title: Text(
+                    'Secret App Space',
+                    style: TextStyle(color: theme.primaryColor, fontSize: 16.wsp(context)),
+                  ),
+                  subtitle: Text(
+                    'Manage your hidden applications',
+                    style: TextStyle(
+                      color: theme.primaryColor.withOpacity(0.7),
+                      fontSize: 12,
+                    ),
+                  ),
+                  trailing: Icon(
+                    Icons.arrow_forward_ios,
+                    color: theme.primaryColor,
+                    size: 16.sw(context),
+                  ),
+                  onTap: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => const HiddenAppsScreen(),
+                      ),
+                    );
+                  },
+                ),
+              ],
             ),
           ),
 

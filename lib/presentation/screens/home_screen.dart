@@ -12,7 +12,6 @@ import '../widgets/floating_app_icon.dart';
 import '../widgets/animated_hearts_background.dart';
 import '../widgets/custom_analog_clock_widget.dart';
 import '../widgets/notification_simulation_widget.dart';
-import 'hidden_apps_screen.dart';
 import 'couple_mode_screen.dart';
 import 'memory_timeline_screen.dart';
 import 'love_app_drawer.dart';
@@ -143,12 +142,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
                     }
                   },
                   onDoubleTap: () {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (context) => const HiddenAppsScreen(),
-                      ),
-                    );
+                    ref.read(nativeAppServiceProvider).startLockService();
                   },
                   onVerticalDragEnd: (details) {
                     if (details.primaryVelocity != null) {
