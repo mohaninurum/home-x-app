@@ -1,52 +1,70 @@
 import 'package:flutter/material.dart';
+import 'dart:io';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'dart:typed_data';
+
+
 import '../../domain/app_info.dart';
+import '../../domain/icon_customization.dart';
 import '../providers.dart';
 import '../theme_provider.dart';
 import '../../core/mood_theme.dart';
+import '../../core/responsive_utils.dart';
 
-
-class StyledAppIcon extends StatelessWidget {
+class StyledAppIcon extends ConsumerWidget {
   final AppInfo app;
   final MoodTheme theme;
-  final Uint8List iconBytes;
+  final ImageProvider imageProvider;
   final bool showLabel;
   final double size;
+
 
   const StyledAppIcon({
     super.key,
     required this.app,
     required this.theme,
-    required this.iconBytes,
+    required this.imageProvider,
     this.showLabel = true,
     this.size = 64.0,
   });
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
+    final customization = ref.watch(iconCustomizationProvider).value ?? const IconCustomization();
+    final double customSize = (size * customization.sizeMultiplier);
+    final double scaledSize = customSize.sw(context);
+    
+    // Calculate pulse, glow, and shadows with custom multipliers
     const double pulseValue = 1.0;
-    final double glowSpread = theme.mood == AppMood.hologram ? 4.0 : 1.0;
-    final double glowBlur = theme.mood == AppMood.hologram ? 20.0 : 10.0;
+    final double shadowMult = customization.shadowMultiplier;
+    final double glowSpread = (theme.mood == AppMood.hologram ? 4.0 : 1.0) * shadowMult;
+    final double glowBlur = (theme.mood == AppMood.hologram ? 20.0 : 10.0) * shadowMult;
+    
+    // Border Radius with customization factor
+    final double borderRadiusVal = scaledSize * 0.25 * customization.borderRadiusMultiplier;
 
     return Column(
       mainAxisSize: MainAxisSize.min,
       children: [
         Container(
-          width: size,
-          height: size,
+          width: scaledSize,
+          height: scaledSize,
           decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(size * 0.25),
-            gradient: LinearGradient(
-              begin: Alignment.topLeft,
-              end: Alignment.bottomRight,
-              colors: [
-                theme.primaryColor.withOpacity(0.6),
-                theme.backgroundColor,
-                theme.secondaryColor.withOpacity(0.2),
-              ],
-            ),
+            borderRadius: BorderRadius.circular(borderRadiusVal),
+            color: customization.backgroundColorValue != null 
+                ? Color(customization.backgroundColorValue!)
+                : null,
+            gradient: customization.backgroundColorValue == null
+              ? LinearGradient(
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                  colors: [
+                    theme.primaryColor.withOpacity(0.6),
+                    theme.backgroundColor,
+                    theme.secondaryColor.withOpacity(0.2),
+                  ],
+                )
+              : null,
             boxShadow: [
               // Outer Glow (Hologram style)
               BoxShadow(
@@ -59,20 +77,20 @@ class StyledAppIcon extends StatelessWidget {
               // Ambient 3D Drop shadow
               BoxShadow(
                 color: Colors.black.withOpacity(0.5),
-                offset: Offset(size * 0.09, size * 0.15),
-                blurRadius: size * 0.23,
+                offset: Offset(customSize * 0.09, customSize * 0.15) * shadowMult,
+                blurRadius: customSize * 0.23 * shadowMult,
               ),
               // Sharp ground contact shadow
               BoxShadow(
                 color: Colors.black.withOpacity(0.4),
-                offset: Offset(size * 0.03, size * 0.05),
-                blurRadius: size * 0.06,
+                offset: Offset(customSize * 0.03, customSize * 0.05) * shadowMult,
+                blurRadius: customSize * 0.06 * shadowMult,
               ),
               // Top-left outer rim highlight
               BoxShadow(
                 color: Colors.white.withOpacity(0.6),
-                offset: Offset(-size * 0.03, -size * 0.03),
-                blurRadius: size * 0.06,
+                offset: Offset(-scaledSize * 0.03, -scaledSize * 0.03) * shadowMult,
+                blurRadius: scaledSize * 0.06 * shadowMult,
               ),
             ],
             border: Border.all(
@@ -84,7 +102,7 @@ class StyledAppIcon extends StatelessWidget {
           ),
           child: Container(
             decoration: BoxDecoration(
-              borderRadius: BorderRadius.circular(size * 0.22),
+              borderRadius: BorderRadius.circular(customSize * 0.22 * customization.borderRadiusMultiplier),
               gradient: LinearGradient(
                 begin: Alignment.topLeft,
                 end: Alignment.bottomRight,
@@ -97,164 +115,60 @@ class StyledAppIcon extends StatelessWidget {
                 stops: const [0.0, 0.3, 0.7, 1.0],
               ),
             ),
-            padding: EdgeInsets.all(size * 0.18),
-            child: Image.memory(
-              iconBytes,
-              fit: BoxFit.contain,
-              filterQuality: FilterQuality.high,
+            padding: EdgeInsets.all(app.customImagePath != null ? 0 : scaledSize * 0.18),
+            child: ClipRRect(
+              borderRadius: BorderRadius.circular(app.customImagePath != null ? borderRadiusVal : customSize * 0.22 * customization.borderRadiusMultiplier),
+              child: Image(
+                image: imageProvider,
+                fit: app.customImagePath != null ? BoxFit.cover : BoxFit.contain,
+                filterQuality: FilterQuality.high,
+                frameBuilder: (context, child, frame, wasSynchronouslyLoaded) {
+                  if (wasSynchronouslyLoaded || frame != null) return child;
+                  return Center(
+                    child: CircularProgressIndicator(
+                      strokeWidth: 2,
+                      color: theme.primaryColor,
+                    ),
+                  );
+                },
+              ),
             ),
           ),
         ),
         if (showLabel) ...[
-          const SizedBox(height: 8),
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 2),
-            decoration: theme.mood == AppMood.hologram
-                ? BoxDecoration(
-                    color: Colors.black26,
-                    borderRadius: BorderRadius.circular(4),
-                    border: Border.all(
-                      color: theme.primaryColor.withOpacity(0.3),
-                      width: 0.5,
-                    ),
-                  )
-                : null,
-            child: Text(
-              app.label,
-              style: TextStyle(
-                color: theme.mood == AppMood.hologram
-                    ? theme.primaryColor
-                    : Colors.black87,
-                fontSize: 10,
-                fontWeight: FontWeight.bold,
-                shadows: [
-                  Shadow(color: theme.backgroundColor, blurRadius: 2),
-                  if (theme.mood == AppMood.hologram)
-                    Shadow(
-                      color: theme.primaryColor.withOpacity(0.5),
-                      blurRadius: 8,
-                    ),
-                ],
-              ),
-              overflow: TextOverflow.ellipsis,
-            ),
-          ),
-        ],
-      ],
-    );
-  }
-}
-
-class StyledAppIconTwo extends StatelessWidget {
-  final AppInfo app;
-  final MoodTheme theme;
-  final Uint8List iconBytes;
-  final bool showLabel;
-  final double size;
-
-  const StyledAppIconTwo({
-    super.key,
-    required this.app,
-    required this.theme,
-    required this.iconBytes,
-    this.showLabel = true,
-    this.size = 64.0,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    const double pulseValue = 1.0;
-    final double glowSpread = theme.mood == AppMood.hologram ? 4.0 : 1.0;
-    final double glowBlur = theme.mood == AppMood.hologram ? 20.0 : 10.0;
-
-    return Column(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        Container(
-          width: size,
-          height: size,
-          decoration: BoxDecoration(
-            shape: BoxShape.circle,
-            gradient: LinearGradient(
-              begin: Alignment.topLeft,
-              end: Alignment.bottomRight,
-              colors: [
-                theme.primaryColor.withOpacity(0.4),
-                theme.secondaryColor.withOpacity(0.1),
-              ],
-            ),
-            boxShadow: [
-              // Outer Glow (Hologram style)
-              BoxShadow(
-                color: theme.iconHighlightColor.withOpacity(
-                  0.5 * (theme.mood == AppMood.hologram ? pulseValue : 1.0),
+          SizedBox(height: 8 * customization.spacingMultiplier),
+          Flexible(
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 2),
+              decoration: theme.mood == AppMood.hologram
+                  ? BoxDecoration(
+                      color: Colors.black26,
+                      borderRadius: BorderRadius.circular(4),
+                      border: Border.all(
+                        color: theme.primaryColor.withOpacity(0.3),
+                        width: 0.5,
+                      ),
+                    )
+                  : null,
+              child: Text(
+                app.label,
+                style: TextStyle(
+                  color: theme.mood == AppMood.hologram
+                      ? theme.primaryColor
+                      : Colors.black87,
+                  fontSize: 10 * customization.textSizeMultiplier,
+                  fontWeight: FontWeight.bold,
+                  shadows: [
+                    Shadow(color: theme.backgroundColor, blurRadius: 2),
+                    if (theme.mood == AppMood.hologram)
+                      Shadow(
+                        color: theme.primaryColor.withOpacity(0.5),
+                        blurRadius: 8,
+                      ),
+                  ],
                 ),
-                blurRadius: glowBlur,
-                spreadRadius: glowSpread,
+                overflow: TextOverflow.ellipsis,
               ),
-              // Bottom Shadow (Depth/Skeuomorphism)
-              BoxShadow(
-                color: Colors.black.withOpacity(0.3),
-                offset: Offset(size * 0.06, size * 0.06),
-                blurRadius: size * 0.12,
-              ),
-              // Inner Highlight (Top Edge - Skeuomorphism)
-              BoxShadow(
-                color: Colors.white.withOpacity(0.4),
-                offset: Offset(-size * 0.03, -size * 0.03),
-                blurRadius: size * 0.06,
-              ),
-            ],
-            border: Border.all(
-              color: theme.mood == AppMood.hologram
-                  ? theme.primaryColor.withOpacity(0.8)
-                  : Colors.white.withOpacity(0.3),
-              width: 1.5,
-            ),
-          ),
-          child: Container(
-            margin: EdgeInsets.all(size * 0.12),
-            decoration: BoxDecoration(
-              shape: BoxShape.circle,
-              image: DecorationImage(
-                image: MemoryImage(iconBytes),
-                fit: BoxFit.contain,
-              ),
-            ),
-          ),
-        ),
-        if (showLabel) ...[
-          const SizedBox(height: 8),
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 2),
-            decoration: theme.mood == AppMood.hologram
-                ? BoxDecoration(
-                    color: Colors.black26,
-                    borderRadius: BorderRadius.circular(4),
-                    border: Border.all(
-                      color: theme.primaryColor.withOpacity(0.3),
-                      width: 0.5,
-                    ),
-                  )
-                : null,
-            child: Text(
-              app.label,
-              style: TextStyle(
-                color: theme.mood == AppMood.hologram
-                    ? theme.primaryColor
-                    : Colors.black87,
-                fontSize: 10,
-                fontWeight: FontWeight.bold,
-                shadows: [
-                  Shadow(color: theme.backgroundColor, blurRadius: 2),
-                  if (theme.mood == AppMood.hologram)
-                    Shadow(
-                      color: theme.primaryColor.withOpacity(0.5),
-                      blurRadius: 8,
-                    ),
-                ],
-              ),
-              overflow: TextOverflow.ellipsis,
             ),
           ),
         ],
@@ -300,6 +214,8 @@ class _FloatingAppIconState extends ConsumerState<FloatingAppIcon> {
 
   @override
   Widget build(BuildContext context) {
+    final isEditMode = ref.watch(editModeProvider);
+
     if (!widget.isFloating) {
       return GestureDetector(
         onTap: () {
@@ -310,9 +226,7 @@ class _FloatingAppIconState extends ConsumerState<FloatingAppIcon> {
       );
     }
 
-    final screenHeight = MediaQuery.of(context).size.height;
-    // Dynamic size scaling: Shrink to 52.0 if in the dock area (bottom 190px)
-    final double iconSize = yPos > (screenHeight - 190) ? 52.0 : 64.0;
+    final double iconSize = 64.0.sw(context);
 
     return Positioned(
       left: xPos,
@@ -321,45 +235,51 @@ class _FloatingAppIconState extends ConsumerState<FloatingAppIcon> {
         onTap: () {
           ref.read(nativeAppServiceProvider).launchApp(widget.app.packageName);
         },
-        onLongPress: () {
+        onLongPress: () async {
           if (widget.onLongPress != null) {
             widget.onLongPress!();
             return;
           }
           final theme = ref.read(themeMoodProvider);
-          showModalBottomSheet(
+          final RenderBox overlay = Overlay.of(context).context.findRenderObject() as RenderBox;
+          final RenderBox button = context.findRenderObject() as RenderBox;
+          final Offset position = button.localToGlobal(Offset.zero);
+
+          final result = await showMenu<String>(
             context: context,
-            backgroundColor: theme.backgroundColor,
-            shape: const RoundedRectangleBorder(
-              borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+            position: RelativeRect.fromLTRB(
+              position.dx,
+              position.dy,
+              overlay.size.width - position.dx,
+              overlay.size.height - position.dy,
             ),
-            builder: (context) => Container(
-              padding: const EdgeInsets.symmetric(vertical: 20),
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  ListTile(
-                    leading: Icon(
-                      Icons.delete_outline,
-                      color: theme.primaryColor,
-                    ),
-                    title: Text(
+            color: theme.backgroundColor.withOpacity(0.95),
+            elevation: 8,
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+            items: [
+              PopupMenuItem<String>(
+                value: 'remove',
+                child: Row(
+                  children: [
+                    Icon(Icons.delete_outline, color: theme.primaryColor, size: 20),
+                    const SizedBox(width: 12),
+                    Text(
                       "Remove from Home",
-                      style: TextStyle(color: theme.primaryColor),
+                      style: TextStyle(color: theme.primaryColor, fontWeight: FontWeight.w600),
                     ),
-                    onTap: () {
-                      ref
-                          .read(homeAppsProvider.notifier)
-                          .removeApp(widget.app.packageName);
-                      Navigator.pop(context);
-                    },
-                  ),
-                ],
+                  ],
+                ),
               ),
-            ),
+            ],
           );
+
+          if (result == 'remove') {
+            ref.read(homeAppsProvider.notifier).removeApp(widget.app.packageName);
+          }
         },
-        child: Draggable(
+        child: Draggable<AppInfo>(
+          data: widget.app,
+          maxSimultaneousDrags: isEditMode ? 1 : 0,
           feedback: Material(
             color: Colors.transparent,
             child: Opacity(
@@ -384,7 +304,11 @@ class _FloatingAppIconState extends ConsumerState<FloatingAppIcon> {
             widget.app.yPos = yPos;
             await _savePosition(xPos, yPos);
           },
-          child: AppIconContent(app: widget.app, showLabel: widget.showLabel, size: iconSize),
+          child: AppIconContent(
+            app: widget.app,
+            showLabel: widget.showLabel,
+            size: iconSize,
+          ),
         ),
       ),
     );
@@ -395,22 +319,65 @@ class AppIconContent extends ConsumerWidget {
   final AppInfo app;
   final bool showLabel;
   final double size;
-  const AppIconContent({super.key, required this.app, this.showLabel = true, this.size = 64.0});
+
+
+  const AppIconContent({
+    super.key,
+    required this.app,
+    this.showLabel = true,
+    this.size = 64.0,
+  });
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final theme = ref.watch(themeMoodProvider);
-    final iconStyle = ref.watch(iconStyleProvider).value ?? AppIconStyle.box;
+    final isUploading = ref.watch(uploadingIconsProvider).contains(app.packageName);
+
+    if (isUploading) {
+      return SizedBox(
+        width: size,
+        height: size,
+        child: Center(
+          child: CircularProgressIndicator(
+            color: theme.primaryColor,
+            strokeWidth: 3,
+          ),
+        ),
+      );
+    }
+
+    if (app.customImagePath != null) {
+      final imageFile = File(app.customImagePath!);
+      if (imageFile.existsSync()) {
+        final imageProvider = FileImage(imageFile);
+        return StyledAppIcon(
+          app: app,
+          theme: theme,
+          imageProvider: imageProvider,
+          showLabel: showLabel,
+          size: size,
+        );
+      }
+    }
+
     final processedIcon = ref.watch(processedIconProvider(app.iconBytes));
 
     return processedIcon.when(
-      data: (iconBytes) => iconStyle == AppIconStyle.box
-          ? StyledAppIcon(app: app, theme: theme, iconBytes: iconBytes, showLabel: showLabel, size: size)
-          : StyledAppIconTwo(app: app, theme: theme, iconBytes: iconBytes, showLabel: showLabel, size: size),
+      data: (iconBytes) => StyledAppIcon(
+        app: app,
+        theme: theme,
+        imageProvider: MemoryImage(iconBytes),
+        showLabel: showLabel,
+        size: size,
+      ),
       loading: () => const Center(child: CircularProgressIndicator()),
-      error: (err, _) => iconStyle == AppIconStyle.box
-          ? StyledAppIcon(app: app, theme: theme, iconBytes: app.iconBytes, showLabel: showLabel, size: size)
-          : StyledAppIconTwo(app: app, theme: theme, iconBytes: app.iconBytes, showLabel: showLabel, size: size),
+      error: (err, _) => StyledAppIcon(
+        app: app,
+        theme: theme,
+        imageProvider: MemoryImage(app.iconBytes),
+        showLabel: showLabel,
+        size: size,
+      ),
     );
   }
 }

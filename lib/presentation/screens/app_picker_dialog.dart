@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../providers.dart';
 import '../theme_provider.dart';
 import '../widgets/floating_app_icon.dart';
+import '../../core/responsive_utils.dart';
 
 class AppPickerDialog extends ConsumerStatefulWidget {
   const AppPickerDialog({super.key});
@@ -26,25 +27,26 @@ class _AppPickerDialogState extends ConsumerState<AppPickerDialog> {
   Widget build(BuildContext context) {
     final appsAsync = ref.watch(appsProvider);
     final theme = ref.watch(themeMoodProvider);
+    final hiddenApps = ref.watch(hiddenAppsProvider).value ?? {};
 
     return ClipRRect(
-      borderRadius: const BorderRadius.vertical(top: Radius.circular(40)),
+      borderRadius: BorderRadius.vertical(top: Radius.circular(40.sw(context))),
       child: BackdropFilter(
         filter: ImageFilter.blur(sigmaX: 20, sigmaY: 20),
         child: Container(
           height: MediaQuery.of(context).size.height * 0.75,
           decoration: BoxDecoration(
             color: theme.backgroundColor.withOpacity(0.65),
-            borderRadius: const BorderRadius.vertical(top: Radius.circular(40)),
+            borderRadius: BorderRadius.vertical(top: Radius.circular(40.sw(context))),
             border: Border.all(
               color: Colors.white.withOpacity(0.15),
-              width: 1.5,
+              width: 1.5.sw(context),
             ),
             boxShadow: [
               BoxShadow(
                 color: theme.primaryColor.withOpacity(0.2), 
-                blurRadius: 40, 
-                spreadRadius: 5
+                blurRadius: 40.sw(context), 
+                spreadRadius: 5.sw(context)
               ),
             ],
           ),
@@ -52,7 +54,12 @@ class _AppPickerDialogState extends ConsumerState<AppPickerDialog> {
             children: [
               // Premium Header & Search Bar
               Container(
-                padding: const EdgeInsets.only(top: 15, bottom: 20, left: 25, right: 25),
+                padding: EdgeInsets.only(
+                  top: 15.sh(context),
+                  bottom: 20.sh(context),
+                  left: 25.sw(context),
+                  right: 25.sw(context),
+                ),
                 decoration: BoxDecoration(
                   gradient: LinearGradient(
                     colors: [
@@ -66,14 +73,14 @@ class _AppPickerDialogState extends ConsumerState<AppPickerDialog> {
                 child: Column(
                   children: [
                     Container(
-                      width: 50,
-                      height: 5,
+                      width: 50.sw(context),
+                      height: 5.sh(context),
                       decoration: BoxDecoration(
                         color: Colors.white.withOpacity(0.5),
-                        borderRadius: BorderRadius.circular(10),
+                        borderRadius: BorderRadius.circular(10.sw(context)),
                       ),
                     ),
-                    const SizedBox(height: 20),
+                    SizedBox(height: 20.sh(context)),
                     Row(
                       children: [
                         Expanded(
@@ -81,31 +88,31 @@ class _AppPickerDialogState extends ConsumerState<AppPickerDialog> {
                             shaderCallback: (bounds) => LinearGradient(
                               colors: [theme.primaryColor, Colors.white],
                             ).createShader(bounds),
-                            child: const Text(
-                              'Add to Home',
-                              style: TextStyle(
-                                color: Colors.white,
-                                fontSize: 28,
-                                fontWeight: FontWeight.w900,
-                                letterSpacing: 0.5,
+                              child: Text(
+                                'Add to Home',
+                                style: TextStyle(
+                                  color: Colors.white,
+                                  fontSize: 28.wsp(context),
+                                  fontWeight: FontWeight.w900,
+                                  letterSpacing: 0.5.sw(context),
+                                ),
                               ),
-                            ),
                           ),
                         ),
                         IconButton(
-                          icon: const Icon(Icons.close, color: Colors.white70),
+                          icon: Icon(Icons.close, color: Colors.white70, size: 24.sw(context)),
                           onPressed: () => Navigator.pop(context),
                         ),
                       ],
                     ),
-                    const SizedBox(height: 15),
+                    SizedBox(height: 15.sh(context)),
                     
                     // Search Bar
                     Container(
-                      height: 50,
+                      height: 50.sh(context),
                       decoration: BoxDecoration(
                         color: Colors.black.withOpacity(0.2),
-                        borderRadius: BorderRadius.circular(25),
+                        borderRadius: BorderRadius.circular(25.sw(context)),
                         border: Border.all(color: Colors.white.withOpacity(0.1)),
                       ),
                       child: TextField(
@@ -118,13 +125,13 @@ class _AppPickerDialogState extends ConsumerState<AppPickerDialog> {
                         },
                         decoration: InputDecoration(
                           hintText: "Search apps...",
-                          hintStyle: TextStyle(color: Colors.white.withOpacity(0.4)),
-                          prefixIcon: const Icon(Icons.search, color: Colors.white54),
+                          hintStyle: TextStyle(color: Colors.white.withOpacity(0.4), fontSize: 14.wsp(context)),
+                          prefixIcon: Icon(Icons.search, color: Colors.white54, size: 20.sw(context)),
                           border: InputBorder.none,
-                          contentPadding: const EdgeInsets.symmetric(vertical: 14),
+                          contentPadding: EdgeInsets.symmetric(vertical: 14.sh(context)),
                           suffixIcon: _searchQuery.isNotEmpty
                               ? IconButton(
-                                  icon: const Icon(Icons.clear, color: Colors.white54, size: 20),
+                                  icon: Icon(Icons.clear, color: Colors.white54, size: 20.sw(context)),
                                   onPressed: () {
                                     _searchController.clear();
                                     setState(() {
@@ -144,8 +151,11 @@ class _AppPickerDialogState extends ConsumerState<AppPickerDialog> {
               Expanded(
                 child: appsAsync.when(
                   data: (allApps) {
-                    final apps = allApps.where((app) => 
-                      app.label.toLowerCase().contains(_searchQuery)).toList();
+                    final apps = allApps.where((app) {
+                      final matchesSearch = app.label.toLowerCase().contains(_searchQuery);
+                      final isHidden = hiddenApps.contains(app.packageName);
+                      return matchesSearch && !isHidden;
+                    }).toList();
 
                     if (apps.isEmpty) {
                       return const Center(
@@ -157,12 +167,12 @@ class _AppPickerDialogState extends ConsumerState<AppPickerDialog> {
                     }
 
                     return GridView.builder(
-                      padding: const EdgeInsets.fromLTRB(20, 10, 20, 40),
+                      padding: EdgeInsets.fromLTRB(20.sw(context), 10.sh(context), 20.sw(context), 40.sh(context)),
                       physics: const BouncingScrollPhysics(),
-                      gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                      gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
                         crossAxisCount: 4,
-                        mainAxisSpacing: 25,
-                        crossAxisSpacing: 15,
+                        mainAxisSpacing: 25.sh(context),
+                        crossAxisSpacing: 15.sw(context),
                         childAspectRatio: 0.7,
                       ),
                       itemCount: apps.length,
@@ -198,7 +208,7 @@ class _AppPickerDialogState extends ConsumerState<AppPickerDialog> {
                                         ),
                                       ]
                                     ),
-                                    child: AppIconContent(app: app, size: 55),
+                                    child: AppIconContent(app: app, size: 55.sw(context)),
                                   ),
                                 ),
                               ],

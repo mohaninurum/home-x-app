@@ -106,6 +106,44 @@ class MainActivity: FlutterFragmentActivity() {
                         }
                     }
 
+                    "uninstallApp" -> {
+                        val packageName = call.argument<String>("packageName")
+                        if (packageName != null) {
+                            try {
+                                val intent = Intent(Intent.ACTION_DELETE)
+                                intent.data = android.net.Uri.parse("package:$packageName")
+                                intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                                startActivity(intent)
+                                result.success(true)
+                            } catch (e: Exception) {
+                                result.error("UNINSTALL_ERROR", e.message, null)
+                            }
+                        } else {
+                            result.error("INVALID_PACKAGE", "Package name is null", null)
+                        }
+                    }
+
+                    "openNotificationPanel" -> {
+                        try {
+                            val statusBarService = getSystemService("statusbar")
+                            val statusBarManager = Class.forName("android.app.StatusBarManager")
+                            val expandMethod = statusBarManager.getMethod("expandNotificationsPanel")
+                            expandMethod.invoke(statusBarService)
+                            result.success(true)
+                        } catch (e: Exception) {
+                            try {
+                                // Fallback for various Android versions
+                                val statusBarService = getSystemService("statusbar")
+                                val statusBarManager = Class.forName("android.app.StatusBarManager")
+                                val expandMethod = statusBarManager.getMethod("expand")
+                                expandMethod.invoke(statusBarService)
+                                result.success(true)
+                            } catch (e2: Exception) {
+                                result.error("OPEN_NOTIFICATION_ERROR", e2.message, null)
+                            }
+                        }
+                    }
+
                     else -> result.notImplemented()
                 }
             }

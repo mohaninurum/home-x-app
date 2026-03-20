@@ -50,6 +50,7 @@ class _HiddenAppsScreenState extends ConsumerState<HiddenAppsScreen> {
     }
 
     final appsAsync = ref.watch(appsProvider);
+    final hiddenPackages = ref.watch(hiddenAppsProvider).value ?? {};
 
     return Scaffold(
       backgroundColor: Colors.black87, // Dark elegant background for hidden space
@@ -61,13 +62,7 @@ class _HiddenAppsScreenState extends ConsumerState<HiddenAppsScreen> {
       ),
       body: appsAsync.when(
         data: (apps) {
-          // For demo purposes, we define "Hidden Apps" as apps with specific keywords or selected apps.
-          // In a full app, this would be a user-selected list saved in SharedPreferences.
-          final hiddenApps = apps.where((app) => 
-            app.label.toLowerCase().contains('bank') || 
-            app.label.toLowerCase().contains('gallery') ||
-            app.label.toLowerCase().contains('settings')
-          ).toList();
+          final hiddenApps = apps.where((app) => hiddenPackages.contains(app.packageName)).toList();
 
           return GridView.builder(
             padding: const EdgeInsets.all(20),
@@ -82,6 +77,36 @@ class _HiddenAppsScreenState extends ConsumerState<HiddenAppsScreen> {
               return InkWell(
                 onTap: () {
                   ref.read(nativeAppServiceProvider).launchApp(app.packageName);
+                },
+                onLongPress: () {
+                  showModalBottomSheet(
+                    context: context,
+                    backgroundColor: Colors.black87,
+                    shape: const RoundedRectangleBorder(
+                      borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+                    ),
+                    builder: (context) => SafeArea(
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          ListTile(
+                            leading: const Icon(Icons.visibility_outlined, color: Colors.pinkAccent),
+                            title: const Text('Unhide App', style: TextStyle(color: Colors.white)),
+                            onTap: () {
+                              ref.read(hiddenAppsProvider.notifier).unhideApp(app.packageName);
+                              Navigator.pop(context);
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                SnackBar(
+                                  content: Text('${app.label} visible in Drawer'),
+                                  backgroundColor: Colors.pinkAccent,
+                                ),
+                              );
+                            },
+                          ),
+                        ],
+                      ),
+                    ),
+                  );
                 },
                 child: Column(
                   mainAxisSize: MainAxisSize.min,

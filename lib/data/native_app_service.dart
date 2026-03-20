@@ -51,5 +51,25 @@ class NativeAppService {
       return false;
     }
   }
+
+  Future<bool> uninstallApp(String packageName) async {
+    try {
+      final bool result = await _channel.invokeMethod('uninstallApp', {'packageName': packageName});
+      return result;
+    } on PlatformException catch (e) {
+      print("Failed to uninstall app: '${e.message}'.");
+      return false;
+    }
+  }
+
+  Future<bool> openNotificationPanel() async {
+    try {
+      final bool result = await _channel.invokeMethod('openNotificationPanel');
+      return result;
+    } on PlatformException catch (e) {
+      print("Failed to open notification panel: '${e.message}'.");
+      return false;
+    }
+  }
 }
 
