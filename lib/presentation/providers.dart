@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../domain/app_info.dart';
@@ -473,6 +474,7 @@ class HomeWidget {
   final double x;
   final double y;
   final String? imagePath;
+  final String type;
 
   HomeWidget({
     required this.id,
@@ -480,6 +482,7 @@ class HomeWidget {
     this.x = 0,
     this.y = 0,
     this.imagePath,
+    this.type = 'app',
   });
 
   Map<String, dynamic> toMap() {
@@ -489,6 +492,7 @@ class HomeWidget {
       'x': x,
       'y': y,
       'imagePath': imagePath,
+      'type': type,
     };
   }
 
@@ -499,16 +503,18 @@ class HomeWidget {
       x: (map['x'] as num).toDouble(),
       y: (map['y'] as num).toDouble(),
       imagePath: map['imagePath'] as String?,
+      type: map['type'] as String? ?? 'app',
     );
   }
 
-  HomeWidget copyWith({double? x, double? y, String? imagePath}) {
+  HomeWidget copyWith({double? x, double? y, String? imagePath, String? type}) {
     return HomeWidget(
       id: id,
       packageName: packageName,
       x: x ?? this.x,
       y: y ?? this.y,
       imagePath: imagePath ?? this.imagePath,
+      type: type ?? this.type,
     );
   }
 }
@@ -529,6 +535,7 @@ class HomeWidgetsNotifier extends AsyncNotifier<List<HomeWidget>> {
     double x,
     double y, {
     String? imagePath,
+    String type = 'app',
   }) async {
     final prefs = await SharedPreferences.getInstance();
     final current = state.value ?? [];
@@ -538,6 +545,7 @@ class HomeWidgetsNotifier extends AsyncNotifier<List<HomeWidget>> {
       x: x,
       y: y,
       imagePath: imagePath,
+      type: type,
     );
     final updated = [...current, newWidget];
     await prefs.setStringList(
@@ -585,9 +593,8 @@ final processedIconProvider = FutureProvider.family<Uint8List, Uint8List>((
   ref,
   originalBytes,
 ) async {
-  // Use compute or similar for heavy processing in a real app,
-  // but provider caching already helps significantly by only running once.
-  return removeWhiteBackground(originalBytes);
+  // Uses compute to push heavy white-background removal pixel operations to a background isolate!
+  return await compute(removeWhiteBackground, originalBytes);
 });
 
 /// Provider for heart animation setting

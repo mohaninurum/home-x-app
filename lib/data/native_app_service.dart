@@ -71,5 +71,34 @@ class NativeAppService {
       return false;
     }
   }
-}
 
+  Future<bool> openWifiSettings() async {
+    try {
+      final bool result = await _channel.invokeMethod('openWifiSettings');
+      return result;
+    } on PlatformException catch (e) {
+      print("Failed to open WiFi settings: '${e.message}'.");
+      return false;
+    }
+  }
+
+  Future<bool> openBluetoothSettings() async {
+    try {
+      final bool result = await _channel.invokeMethod('openBluetoothSettings');
+      return result;
+    } on PlatformException catch (e) {
+      print("Failed to open Bluetooth settings: '${e.message}'.");
+      return false;
+    }
+  }
+
+  Future<bool> openMobileDataSettings() async {
+    try {
+      final bool result = await _channel.invokeMethod('openMobileDataSettings');
+      return result;
+    } on PlatformException catch (e) {
+      print("Failed to open Mobile Data settings: '${e.message}'.");
+      return false;
+    }
+  }
+}

@@ -123,6 +123,42 @@ class MainActivity: FlutterFragmentActivity() {
                         }
                     }
 
+                    "openWifiSettings" -> {
+                        try {
+                            val intent = Intent(android.provider.Settings.ACTION_WIFI_SETTINGS)
+                            startActivity(intent)
+                            result.success(true)
+                        } catch (e: Exception) {
+                            result.error("WIFI_ERROR", e.message, null)
+                        }
+                    }
+
+                    "openBluetoothSettings" -> {
+                        try {
+                            val intent = Intent(android.provider.Settings.ACTION_BLUETOOTH_SETTINGS)
+                            startActivity(intent)
+                            result.success(true)
+                        } catch (e: Exception) {
+                            result.error("BLUETOOTH_ERROR", e.message, null)
+                        }
+                    }
+
+                    "openMobileDataSettings" -> {
+                        try {
+                            val intent = Intent(android.provider.Settings.ACTION_DATA_ROAMING_SETTINGS)
+                            startActivity(intent)
+                            result.success(true)
+                        } catch (e: Exception) {
+                            try {
+                                val intent2 = Intent(android.provider.Settings.ACTION_WIRELESS_SETTINGS)
+                                startActivity(intent2)
+                                result.success(true)
+                            } catch (e2: Exception) {
+                                result.error("DATA_ERROR", e2.message, null)
+                            }
+                        }
+                    }
+
                     "openNotificationPanel" -> {
                         try {
                             val statusBarService = getSystemService("statusbar")
@@ -181,26 +217,30 @@ class MainActivity: FlutterFragmentActivity() {
     }
 
     private fun drawableToByteArray(drawable: Drawable): ByteArray {
+        val maxWidth = 144
+        val maxHeight = 144
 
-        val bitmap = if (drawable is BitmapDrawable) {
+        val width = drawable.intrinsicWidth.coerceAtMost(maxWidth).coerceAtLeast(1)
+        val height = drawable.intrinsicHeight.coerceAtMost(maxHeight).coerceAtLeast(1)
+
+        val bitmap = if (drawable is BitmapDrawable && drawable.bitmap.width <= maxWidth && drawable.bitmap.height <= maxHeight) {
             drawable.bitmap
         } else {
-
-            val bmp = Bitmap.createBitmap(
-                drawable.intrinsicWidth.coerceAtLeast(1),
-                drawable.intrinsicHeight.coerceAtLeast(1),
-                Bitmap.Config.ARGB_8888
-            )
-
+            val bmp = Bitmap.createBitmap(width, height, Bitmap.Config.ARGB_8888)
             val canvas = Canvas(bmp)
             drawable.setBounds(0, 0, canvas.width, canvas.height)
             drawable.draw(canvas)
-
             bmp
         }
 
         val stream = ByteArrayOutputStream()
-        bitmap.compress(Bitmap.CompressFormat.PNG, 100, stream)
+        // Use WEBP if available (API 30+), else WEBP
+        if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.R) {
+            bitmap.compress(Bitmap.CompressFormat.WEBP_LOSSY, 80, stream)
+        } else {
+            @Suppress("DEPRECATION")
+            bitmap.compress(Bitmap.CompressFormat.WEBP, 80, stream)
+        }
 
         return stream.toByteArray()
     }

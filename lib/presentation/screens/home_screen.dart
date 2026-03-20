@@ -17,7 +17,10 @@ import 'love_app_drawer.dart';
 import 'settings_screen.dart';
 import '../widgets/gesture_drawing_detector.dart';
 import '../widgets/app_tile_widget.dart';
+import '../widgets/control_panel_widget.dart';
 import 'app_picker_dialog.dart';
+import '../widgets/system_widgets.dart';
+import 'widget_selection_dialog.dart';
 import '../theme_provider.dart';
 import '../../core/responsive_utils.dart';
 import '../../domain/clock_customization.dart';
@@ -110,7 +113,9 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
             // 1. Dynamic Wallpaper with Drawing Support
             const Positioned.fill(
               child: GestureDrawingDetector(
-                child: AnimatedHeartsBackground(),
+                child: RepaintBoundary(
+                  child: AnimatedHeartsBackground(),
+                ),
               ),
             ),
 
@@ -285,32 +290,56 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
                     // Dynamic App Widgets
                     ...ref.watch(homeWidgetsProvider).when(
                           data: (widgets) => widgets.map(
-                            (w) => Positioned(
-                              left: w.x,
-                              top: w.y,
-                              child: Draggable(
-                                maxSimultaneousDrags: isEditMode ? 1 : 0,
-                                feedback: Material(
-                                  color: Colors.transparent,
-                                  child: Opacity(
-                                    opacity: 0.7,
-                                    child: AppTileWidget(widgetData: w),
-                                  ),
-                                ),
-                                childWhenDragging: const SizedBox.shrink(),
-                                onDragEnd: (details) {
-                                  final renderBox = context.findRenderObject() as RenderBox;
-                                  final localPos = renderBox.globalToLocal(details.offset);
-                                  ref.read(homeWidgetsProvider.notifier).updatePosition(w.id, localPos.dx, localPos.dy);
-                                },
-                                child: AppTileWidget(
+                            (w) {
+                              Widget childWidget;
+                              if (w.type == 'clock') {
+                                childWidget = const SizedBox(
+                                  width: 140, 
+                                  height: 140, 
+                                  child: CustomAnalogClockWidget()
+                                );
+                              } else if (w.type == 'weather') {
+                                childWidget = const WeatherWidget();
+                              } else if (w.type == 'battery') {
+                                childWidget = const BatteryWidget();
+                              } else if (w.type == 'control_panel') {
+                                childWidget = const ControlPanelWidget();
+                              } else {
+                                childWidget = AppTileWidget(
                                   widgetData: w,
                                   onLongPress: () {
                                     _showWidgetOptions(w.id);
                                   },
+                                );
+                              }
+
+                              return Positioned(
+                                left: w.x,
+                                top: w.y,
+                                child: Draggable(
+                                  maxSimultaneousDrags: isEditMode ? 1 : 0,
+                                  feedback: Material(
+                                    color: Colors.transparent,
+                                    child: Opacity(
+                                      opacity: 0.7,
+                                      child: childWidget,
+                                    ),
+                                  ),
+                                  childWhenDragging: const SizedBox.shrink(),
+                                  onDragEnd: (details) {
+                                    final renderBox = context.findRenderObject() as RenderBox;
+                                    final localPos = renderBox.globalToLocal(details.offset);
+                                    ref.read(homeWidgetsProvider.notifier).updatePosition(w.id, localPos.dx, localPos.dy);
+                                  },
+                                  child: w.type == 'app'
+                                      ? childWidget
+                                      : GestureDetector(
+                                          onLongPress: () => _showWidgetOptions(w.id),
+                                          child: childWidget,
+                                        ),
                                 ),
-                              ),
-                            ),
+                              );
+                            }
                           ),
                           loading: () => [],
                           error: (_, __) => [],
@@ -566,6 +595,39 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
   }
 
   void _showAppPicker({required bool isWidget}) async {
+    if (isWidget) {
+      final choice = await showModalBottomSheet<String>(
+        context: context,
+        isScrollControlled: true,
+        backgroundColor: Colors.transparent,
+        builder: (context) => const WidgetSelectionDialog(),
+      );
+
+      if (choice == 'system') {
+        final sysWidgetType = await showModalBottomSheet<String>(
+          context: context,
+          isScrollControlled: true,
+          backgroundColor: Colors.transparent,
+          builder: (context) => const SystemWidgetPicker(),
+        );
+
+        if (sysWidgetType != null) {
+          ref.read(homeWidgetsProvider.notifier).addWidget(
+            'system',
+            _lastLongPressPos.dx - 80,
+            _lastLongPressPos.dy - 80,
+            type: sysWidgetType,
+          );
+          setState(() {
+            _showAddWidgetButton = false;
+          });
+        }
+        return;
+      } else if (choice == null || choice != 'app') {
+        return; // User cancelled
+      }
+    }
+
     final packageName = await showModalBottomSheet<String>(
       context: context,
       isScrollControlled: true,
@@ -584,11 +646,13 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
 
       // Check if it's a photos app to prompt for an image
       final apps = ref.read(appsProvider).value ?? [];
-      final app = apps.firstWhere((a) => a.packageName == packageName);
-      final isPhotos =
-          app.label.toLowerCase().contains('photo') ||
-          app.packageName.toLowerCase().contains('gallery') ||
-          app.packageName.toLowerCase().contains('photos');
+      bool isPhotos = false;
+      try {
+        final app = apps.firstWhere((a) => a.packageName == packageName);
+        isPhotos = app.label.toLowerCase().contains('photo') ||
+                   app.packageName.toLowerCase().contains('gallery') ||
+                   app.packageName.toLowerCase().contains('photos');
+      } catch (_) {}
 
       if (isPhotos) {
         final picker = ImagePicker();
@@ -605,6 +669,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
             _lastLongPressPos.dx - 80,
             _lastLongPressPos.dy - 80,
             imagePath: photoPath,
+            type: 'app',
           );
       setState(() {
         _showAddWidgetButton = false;

@@ -17,6 +17,7 @@ class SettingsScreen extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final theme = ref.watch(themeMoodProvider);
+    final isDynamicTheme = ref.watch(dynamicThemeModeProvider);
     final wallpaperPath = ref.watch(wallpaperProvider).value;
 
     Future<void> pickWallpaper() async {
@@ -56,30 +57,60 @@ class SettingsScreen extends ConsumerWidget {
               border: Border.all(color: theme.primaryColor.withOpacity(0.2)),
             ),
             child: Column(
-              children: MoodTheme.values.map((currentMoodTheme) {
-                final isSelected = theme.mood == currentMoodTheme.mood;
-                return ListTile(
-                  leading: Icon(
-                    Icons.favorite,
-                    color: currentMoodTheme.primaryColor,
+              children: [
+                SwitchListTile(
+                  secondary: Icon(
+                    Icons.schedule,
+                    color: theme.primaryColor,
                   ),
                   title: Text(
-                    currentMoodTheme.title,
+                    'Dynamic Time Theme',
                     style: TextStyle(
                       color: theme.primaryColor,
                       fontSize: 16.wsp(context),
                     ),
                   ),
-                  trailing: isSelected
-                      ? Icon(Icons.check, color: theme.secondaryColor)
-                      : null,
-                  onTap: () {
-                    ref
-                        .read(themeMoodProvider.notifier)
-                        .setMood(currentMoodTheme.mood);
+                  subtitle: Text(
+                    'Automatically changes theme colors based on time of day (Morning, Afternoon, Evening, Night)',
+                    style: TextStyle(
+                      color: theme.primaryColor.withOpacity(0.7),
+                      fontSize: 12.wsp(context),
+                    ),
+                  ),
+                  value: isDynamicTheme,
+                  activeThumbColor: theme.secondaryColor,
+                  onChanged: (value) {
+                    ref.read(themeMoodProvider.notifier).setDynamicMode(value);
                   },
-                );
-              }).toList(),
+                ),
+                if (!isDynamicTheme) ...[
+                  Divider(height: 1, color: theme.primaryColor.withOpacity(0.1)),
+                  ...MoodTheme.values.map((currentMoodTheme) {
+                    final isSelected = theme.mood == currentMoodTheme.mood;
+                    return ListTile(
+                      leading: Icon(
+                        Icons.palette,
+                        color: currentMoodTheme.primaryColor,
+                      ),
+                      title: Text(
+                        currentMoodTheme.title,
+                        style: TextStyle(
+                          color: theme.primaryColor,
+                          fontSize: 16.wsp(context),
+                        ),
+                      ),
+                      trailing: isSelected
+                          ? Icon(Icons.check, color: theme.secondaryColor)
+                          : null,
+                      onTap: () {
+                        ref
+                            .read(themeMoodProvider.notifier)
+                            .setMood(currentMoodTheme.mood);
+                      },
+                    );
+                  }).toList(),
+                ],
+              ],
             ),
           ),
 

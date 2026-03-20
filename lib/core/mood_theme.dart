@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 
-enum AppMood { romantic, passion, cute, nightLove, hologram }
+enum AppMood { romantic, passion, cute, nightLove, hologram, morning, afternoon, evening, night }
 
 enum AppIconStyle { box }
 
@@ -28,7 +28,7 @@ class MoodTheme {
       useMaterial3: true,
       colorScheme: ColorScheme.fromSeed(
         seedColor: primaryColor,
-        brightness: mood == AppMood.nightLove ? Brightness.dark : Brightness.light,
+        brightness: (mood == AppMood.nightLove || mood == AppMood.night || mood == AppMood.hologram) ? Brightness.dark : Brightness.light,
         primary: primaryColor,
         secondary: secondaryColor,
         background: backgroundColor,
@@ -88,5 +88,48 @@ class MoodTheme {
     backgroundGradients: [Color(0x8000E5FF), Color(0xFF0A0E17), Color(0x66D500F9)],
   );
 
-  static List<MoodTheme> get values => [romantic, passion, cute, nightLove, hologram];
+  static const morning = MoodTheme(
+    mood: AppMood.morning,
+    title: "Morning Light",
+    primaryColor: Color(0xFFFBC02D),
+    secondaryColor: Color(0xFF4FC3F7),
+    backgroundColor: Color(0xFFFFFDE7),
+    iconHighlightColor: Color(0xFFFFEB3B),
+    backgroundGradients: [Color(0x80FBC02D), Color(0xCCFFFDE7), Color(0x4D4FC3F7)],
+  );
+
+  static const afternoon = MoodTheme(
+    mood: AppMood.afternoon,
+    title: "Afternoon Sky",
+    primaryColor: Color(0xFF0288D1),
+    secondaryColor: Color(0xFF00BCD4),
+    backgroundColor: Color(0xFFE1F5FE),
+    iconHighlightColor: Color(0xFF4FC3F7),
+    backgroundGradients: [Color(0x800288D1), Color(0xCCE1F5FE), Color(0x4D00BCD4)],
+  );
+
+  static const evening = MoodTheme(
+    mood: AppMood.evening,
+    title: "Evening Sunset",
+    primaryColor: Color(0xFFFF7043),
+    secondaryColor: Color(0xFFAB47BC),
+    backgroundColor: Color(0xFFFBE9E7),
+    iconHighlightColor: Color(0xFFFF8A65),
+    backgroundGradients: [Color(0x80FF7043), Color(0xCCFBE9E7), Color(0x4DAB47BC)],
+  );
+
+  static const night = MoodTheme(
+    mood: AppMood.night,
+    title: "Night Glow",
+    primaryColor: Color(0xFF303F9F),
+    secondaryColor: Color(0xFF512DA8),
+    backgroundColor: Color(0xFF090B10),
+    iconHighlightColor: Color(0xFF5C6BC0),
+    backgroundGradients: [Color(0x80303F9F), Color(0xFF090B10), Color(0x4D512DA8)],
+  );
+
+  static List<MoodTheme> get values => [
+    romantic, passion, cute, nightLove, hologram, 
+    morning, afternoon, evening, night
+  ];
 }
