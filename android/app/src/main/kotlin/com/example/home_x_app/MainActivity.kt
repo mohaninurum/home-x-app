@@ -95,6 +95,18 @@ class MainActivity: FlutterFragmentActivity() {
                     }
 
                     "openDefaultLauncherSettings" -> {
+                        if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.Q) {
+                            val roleManager = getSystemService(android.app.role.RoleManager::class.java)
+                            if (roleManager != null && roleManager.isRoleAvailable(android.app.role.RoleManager.ROLE_HOME)) {
+                                if (!roleManager.isRoleHeld(android.app.role.RoleManager.ROLE_HOME)) {
+                                    val intent = roleManager.createRequestRoleIntent(android.app.role.RoleManager.ROLE_HOME)
+                                    startActivityForResult(intent, 1001)
+                                }
+                                result.success(true)
+                                return@setMethodCallHandler
+                            }
+                        }
+
                         try {
                             val intent = Intent(android.provider.Settings.ACTION_HOME_SETTINGS)
                             startActivity(intent)

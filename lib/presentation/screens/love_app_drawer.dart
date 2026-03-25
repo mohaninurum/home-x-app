@@ -81,6 +81,27 @@ class _LoveAppDrawerState extends ConsumerState<LoveAppDrawer> {
                   ),
                 ],
               ),
+            )
+          else
+            PopupMenuItem<String>(
+              value: 'add_home',
+              child: Row(
+                children: [
+                  Icon(
+                    Icons.add_to_home_screen,
+                    color: theme.primaryColor,
+                    size: 20,
+                  ),
+                  const SizedBox(width: 12),
+                  Text(
+                    'Add to Home',
+                    style: TextStyle(
+                      color: theme.primaryColor,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                ],
+              ),
             ),
           PopupMenuItem<String>(
             value: 'change_icon',
@@ -160,6 +181,8 @@ class _LoveAppDrawerState extends ConsumerState<LoveAppDrawer> {
 
       if (result == 'remove_home') {
         ref.read(homeAppsProvider.notifier).removeApp(app.packageName);
+      } else if (result == 'add_home') {
+        ref.read(homeAppsProvider.notifier).addApp(app.packageName);
       } else if (result == 'change_icon') {
         final picker = ImagePicker();
         final pickedFile = await picker.pickImage(source: ImageSource.gallery);
@@ -387,7 +410,7 @@ class _LoveAppDrawerState extends ConsumerState<LoveAppDrawer> {
                     onLongPress: _onAppLongPress(
                       context,
                       app,
-                      false,
+                      isOnHome,
                       theme,
                       nativeService,
                     ),
