@@ -42,7 +42,7 @@ class _AnimatedHeartsBackgroundState extends ConsumerState<AnimatedHeartsBackgro
   @override
   void initState() {
     super.initState();
-    _controller = AnimationController(vsync: this, duration: const Duration(seconds: 10))..repeat();
+    _controller = AnimationController(vsync: this, duration: const Duration(seconds: 10));
   }
 
   @override
@@ -95,6 +95,12 @@ class _AnimatedHeartsBackgroundState extends ConsumerState<AnimatedHeartsBackgro
     final screenSize = MediaQuery.of(context).size;
     final wallpaperPath = ref.watch(wallpaperProvider).value;
     final showHearts = ref.watch(heartAnimationProvider).value ?? true;
+
+    if (showHearts && !_controller.isAnimating) {
+      _controller.repeat();
+    } else if (!showHearts && _controller.isAnimating) {
+      _controller.stop();
+    }
 
     return Container(
       width: double.infinity,

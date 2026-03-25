@@ -61,7 +61,7 @@ class _NeoMovingBorderState extends State<NeoMovingBorder>
       animation: _controller,
       builder: (context, child) {
         return CustomPaint(
-          painter: _NeoBorderPainter(
+          foregroundPainter: _NeoBorderPainter(
             animationValue: _controller.value,
             borderWidth: widget.borderWidth,
             primaryColor: widget.primaryColor,
@@ -69,10 +69,7 @@ class _NeoMovingBorderState extends State<NeoMovingBorder>
             isCircle: widget.isCircle,
             borderRadius: widget.borderRadius ?? BorderRadius.circular(0),
           ),
-          child: Padding(
-            padding: EdgeInsets.all(widget.borderWidth),
-            child: widget.child,
-          ),
+          child: widget.child,
         );
       },
     );

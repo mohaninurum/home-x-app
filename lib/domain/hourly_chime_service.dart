@@ -23,21 +23,26 @@ class HourlyChimeService {
   }
 
   void _startTimer() {
-    // Check the time every minute
-    _timer = Timer.periodic(const Duration(seconds: 1), (timer) {
-      final now = DateTime.now();
-      
-      // If it's the exact start of a new hour (0 minutes, 0 seconds)
-      if (now.minute == 0 && now.second == 0) {
-        // Prevent speaking multiple times for the same hour
-        if (_lastSpokenHour != now.hour) {
-          final isEnabled = ref.read(clockCustomizationProvider).value?.hourlyChimeEnabled ?? false;
-          if (isEnabled) {
-            _speakTime(now.hour);
-          }
-          _lastSpokenHour = now.hour;
+    _scheduleNextChime();
+  }
+
+  void _scheduleNextChime() {
+    final now = DateTime.now();
+    // Next hour is exactly 0 minutes, 0 seconds of the following hour
+    final nextHour = DateTime(now.year, now.month, now.day, now.hour + 1);
+    final durationToNextHour = nextHour.difference(now);
+
+    _timer?.cancel();
+    _timer = Timer(durationToNextHour, () {
+      final nowTime = DateTime.now();
+      if (_lastSpokenHour != nowTime.hour) {
+        final isEnabled = ref.read(clockCustomizationProvider).value?.hourlyChimeEnabled ?? false;
+        if (isEnabled) {
+          _speakTime(nowTime.hour);
         }
+        _lastSpokenHour = nowTime.hour;
       }
+      _scheduleNextChime();
     });
   }
 

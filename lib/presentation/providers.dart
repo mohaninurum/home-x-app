@@ -281,15 +281,6 @@ class HomeAppsNotifier extends AsyncNotifier<Set<String>> {
     state = AsyncData(updated);
   }
 
-  Future<void> toggleApp(String packageName) async {
-    final current = state.value ?? {};
-    if (current.contains(packageName)) {
-      await removeApp(packageName);
-    } else {
-      await addApp(packageName);
-    }
-  }
-
   Future<void> addAppAt(String packageName, double x, double y) async {
     final prefs = await SharedPreferences.getInstance();
 

@@ -60,26 +60,27 @@ class _LoveAppDrawerState extends ConsumerState<LoveAppDrawer> {
         elevation: 8,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
         items: [
-          PopupMenuItem<String>(
-            value: 'toggle_home',
-            child: Row(
-              children: [
-                Icon(
-                  isOnHome ? Icons.favorite_border : Icons.favorite,
-                  color: theme.primaryColor,
-                  size: 20,
-                ),
-                const SizedBox(width: 12),
-                Text(
-                  isOnHome ? 'Remove from Home' : 'Add to Home',
-                  style: TextStyle(
+          if (isOnHome)
+            PopupMenuItem<String>(
+              value: 'remove_home',
+              child: Row(
+                children: [
+                  Icon(
+                    Icons.delete_outline,
                     color: theme.primaryColor,
-                    fontWeight: FontWeight.w600,
+                    size: 20,
                   ),
-                ),
-              ],
+                  const SizedBox(width: 12),
+                  Text(
+                    'Remove from Home',
+                    style: TextStyle(
+                      color: theme.primaryColor,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                ],
+              ),
             ),
-          ),
           PopupMenuItem<String>(
             value: 'change_icon',
             child: Row(
@@ -118,6 +119,22 @@ class _LoveAppDrawerState extends ConsumerState<LoveAppDrawer> {
               ),
             ),
           PopupMenuItem<String>(
+            value: 'app_info',
+            child: Row(
+              children: [
+                Icon(Icons.info_outline, color: theme.primaryColor, size: 20),
+                const SizedBox(width: 12),
+                Text(
+                  'App Info',
+                  style: TextStyle(
+                    color: theme.primaryColor,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          PopupMenuItem<String>(
             value: 'uninstall',
             child: Row(
               children: [
@@ -140,8 +157,8 @@ class _LoveAppDrawerState extends ConsumerState<LoveAppDrawer> {
         ],
       );
 
-      if (result == 'toggle_home') {
-        ref.read(homeAppsProvider.notifier).toggleApp(app.packageName);
+      if (result == 'remove_home') {
+        ref.read(homeAppsProvider.notifier).removeApp(app.packageName);
       } else if (result == 'change_icon') {
         final picker = ImagePicker();
         final pickedFile = await picker.pickImage(source: ImageSource.gallery);
@@ -165,6 +182,8 @@ class _LoveAppDrawerState extends ConsumerState<LoveAppDrawer> {
         await ref
             .read(iconImageProvider.notifier)
             .clearCustomIcon(app.packageName);
+      } else if (result == 'app_info') {
+        await nativeService.openAppInfo(app.packageName);
       } else if (result == 'uninstall') {
         await nativeService.uninstallApp(app.packageName);
         if (mounted) {
@@ -364,59 +383,15 @@ class _LoveAppDrawerState extends ConsumerState<LoveAppDrawer> {
                     onTap: () {
                       nativeService.launchApp(app.packageName);
                     },
-                    onLongPress: () {
-                      ref
-                          .read(homeAppsProvider.notifier)
-                          .toggleApp(app.packageName);
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        SnackBar(
-                          content: Text(
-                            isOnHome ? 'Removed from Home' : 'Added to Home',
-                          ),
-                          backgroundColor: theme.primaryColor,
-                          duration: const Duration(seconds: 1),
-                        ),
-                      );
-                    },
-                    child: LongPressDraggable<AppInfo>(
-                      data: app,
-                      feedback: Material(
-                        color: Colors.transparent,
-                        child: Opacity(
-                          opacity: 0.7,
-                          child: SizedBox(
-                            width: 80,
-                            height: 80,
-                            child: AppIconContent(app: app, showLabel: true),
-                          ),
-                        ),
-                      ),
-                      childWhenDragging: Opacity(
-                        opacity: 0.3,
-                        child: AppIconContent(app: app, showLabel: true),
-                      ),
-                      child: Stack(
-                        alignment: Alignment.center,
-                        children: [
-                          AppIconContent(app: app, showLabel: true),
-                          if (isOnHome)
-                            Positioned(
-                              top: 0,
-                              right: 0,
-                              child: Icon(
-                                Icons.favorite,
-                                color: theme.secondaryColor,
-                                size: 16.sw(context),
-                                shadows: [
-                                  Shadow(
-                                    color: theme.backgroundColor,
-                                    blurRadius: 4,
-                                  ),
-                                ],
-                              ),
-                            ),
-                        ],
-                      ),
+                    onLongPress: _onAppLongPress(
+                      app,
+                      false,
+                      theme,
+                      nativeService,
+                    ),
+                    child: Stack(
+                      alignment: Alignment.center,
+                      children: [AppIconContent(app: app, showLabel: true)],
                     ),
                   );
                 },

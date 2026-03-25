@@ -270,11 +270,41 @@ class _FloatingAppIconState extends ConsumerState<FloatingAppIcon> {
                   ],
                 ),
               ),
+              PopupMenuItem<String>(
+                value: 'app_info',
+                child: Row(
+                  children: [
+                    Icon(Icons.info_outline, color: theme.primaryColor, size: 20),
+                    const SizedBox(width: 12),
+                    Text(
+                      "App Info",
+                      style: TextStyle(color: theme.primaryColor, fontWeight: FontWeight.w600),
+                    ),
+                  ],
+                ),
+              ),
+              PopupMenuItem<String>(
+                value: 'uninstall',
+                child: Row(
+                  children: [
+                    const Icon(Icons.delete_outline, color: Colors.redAccent, size: 20),
+                    const SizedBox(width: 12),
+                    const Text(
+                      "Uninstall",
+                      style: TextStyle(color: Colors.redAccent, fontWeight: FontWeight.w600),
+                    ),
+                  ],
+                ),
+              ),
             ],
           );
 
           if (result == 'remove') {
             ref.read(homeAppsProvider.notifier).removeApp(widget.app.packageName);
+          } else if (result == 'app_info') {
+            ref.read(nativeAppServiceProvider).openAppInfo(widget.app.packageName);
+          } else if (result == 'uninstall') {
+            ref.read(nativeAppServiceProvider).uninstallApp(widget.app.packageName);
           }
         },
         child: Draggable<AppInfo>(
@@ -295,10 +325,11 @@ class _FloatingAppIconState extends ConsumerState<FloatingAppIcon> {
           onDragEnd: (details) async {
             final RenderBox stackBox = context.findAncestorRenderObjectOfType<RenderBox>()!;
             final localPos = stackBox.globalToLocal(details.offset);
+            final double maxY = stackBox.size.height - 140.sh(context);
             
             setState(() {
               xPos = localPos.dx;
-              yPos = localPos.dy;
+              yPos = localPos.dy > maxY ? maxY : localPos.dy;
             });
             widget.app.xPos = xPos;
             widget.app.yPos = yPos;

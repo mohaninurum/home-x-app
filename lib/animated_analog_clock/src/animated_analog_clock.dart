@@ -1,6 +1,6 @@
-import 'dart:async';
 
 import 'package:flutter/material.dart';
+import 'package:flutter/scheduler.dart';
 import 'package:home_x_app/animated_analog_clock/src/widgets/clock_face.dart';
 import 'package:timezone/data/latest.dart' as tz;
 import 'package:timezone/timezone.dart' as tz;
@@ -119,9 +119,10 @@ class AnimatedAnalogClock extends StatefulWidget {
   State<AnimatedAnalogClock> createState() => _AnimatedAnalogClockState();
 }
 
-class _AnimatedAnalogClockState extends State<AnimatedAnalogClock> {
-  Timer? timer;
+class _AnimatedAnalogClockState extends State<AnimatedAnalogClock> with SingleTickerProviderStateMixin {
+  late Ticker _ticker;
   late ValueNotifier<DateTime> currentTime;
+  Duration? _lastElapsed;
 
   /// getter for getting specified location timezone
   DateTime get locationTime {
@@ -142,13 +143,18 @@ class _AnimatedAnalogClockState extends State<AnimatedAnalogClock> {
 
   /// update the clock time in every 10 milliseconds
   void startClockTime() {
-    timer = Timer.periodic(
-      widget.updateInterval ??
-          (widget.showSecondHand
-              ? const Duration(milliseconds: 16)
-              : const Duration(seconds: 2)),
-      (timer) => currentTime.value = locationTime,
-    );
+    final interval = widget.updateInterval ??
+        (widget.showSecondHand
+            ? const Duration(milliseconds: 16)
+            : const Duration(seconds: 2));
+
+    _ticker = createTicker((elapsed) {
+      if (_lastElapsed == null || (elapsed - _lastElapsed!) >= interval) {
+        _lastElapsed = elapsed;
+        currentTime.value = locationTime;
+      }
+    });
+    _ticker.start();
   }
 
   @override
@@ -161,7 +167,7 @@ class _AnimatedAnalogClockState extends State<AnimatedAnalogClock> {
 
   @override
   void dispose() {
-    timer?.cancel();
+    _ticker.dispose();
     super.dispose();
   }
 
