@@ -33,15 +33,16 @@ class _LoveAppDrawerState extends ConsumerState<LoveAppDrawer> {
   }
 
   void Function() _onAppLongPress(
+    BuildContext itemContext,
     AppInfo app,
     bool isOnHome,
     dynamic theme,
     dynamic nativeService,
   ) {
     return () async {
-      final RenderBox button = context.findRenderObject() as RenderBox;
+      final RenderBox button = itemContext.findRenderObject() as RenderBox;
       final RenderBox overlay =
-          Overlay.of(context).context.findRenderObject() as RenderBox;
+          Overlay.of(itemContext).context.findRenderObject() as RenderBox;
       final RelativeRect position = RelativeRect.fromRect(
         Rect.fromPoints(
           button.localToGlobal(Offset.zero, ancestor: overlay),
@@ -122,7 +123,15 @@ class _LoveAppDrawerState extends ConsumerState<LoveAppDrawer> {
             value: 'app_info',
             child: Row(
               children: [
+<<<<<<< HEAD
                 Icon(Icons.info_outline, color: theme.primaryColor, size: 20),
+=======
+                Icon(
+                  Icons.info_outline,
+                  color: theme.primaryColor,
+                  size: 20,
+                ),
+>>>>>>> 29cc640635f8fd317cc04753b31dc19a758576a4
                 const SizedBox(width: 12),
                 Text(
                   'App Info',
@@ -183,7 +192,11 @@ class _LoveAppDrawerState extends ConsumerState<LoveAppDrawer> {
             .read(iconImageProvider.notifier)
             .clearCustomIcon(app.packageName);
       } else if (result == 'app_info') {
+<<<<<<< HEAD
         await nativeService.openAppInfo(app.packageName);
+=======
+        nativeService.openAppInfo(app.packageName);
+>>>>>>> 29cc640635f8fd317cc04753b31dc19a758576a4
       } else if (result == 'uninstall') {
         await nativeService.uninstallApp(app.packageName);
         if (mounted) {
@@ -379,6 +392,7 @@ class _LoveAppDrawerState extends ConsumerState<LoveAppDrawer> {
                   final app = filteredApps[index];
                   final isOnHome = homeApps.contains(app.packageName);
 
+<<<<<<< HEAD
                   return InkWell(
                     onTap: () {
                       nativeService.launchApp(app.packageName);
@@ -392,6 +406,60 @@ class _LoveAppDrawerState extends ConsumerState<LoveAppDrawer> {
                     child: Stack(
                       alignment: Alignment.center,
                       children: [AppIconContent(app: app, showLabel: true)],
+=======
+                  return Builder(
+                    builder: (itemContext) => InkWell(
+                      onTap: () {
+                        nativeService.launchApp(app.packageName);
+                      },
+                      onLongPress: _onAppLongPress(
+                        itemContext,
+                        app,
+                        isOnHome,
+                        theme,
+                        nativeService,
+                      ),
+                      child: LongPressDraggable<AppInfo>(
+                        data: app,
+                        feedback: Material(
+                          color: Colors.transparent,
+                          child: Opacity(
+                            opacity: 0.7,
+                            child: SizedBox(
+                              width: 80,
+                              height: 80,
+                              child: AppIconContent(app: app, showLabel: true),
+                            ),
+                          ),
+                        ),
+                        childWhenDragging: Opacity(
+                          opacity: 0.3,
+                          child: AppIconContent(app: app, showLabel: true),
+                        ),
+                        child: Stack(
+                          alignment: Alignment.center,
+                          children: [
+                            AppIconContent(app: app, showLabel: true),
+                            if (isOnHome)
+                              Positioned(
+                                top: 0,
+                                right: 0,
+                                child: Icon(
+                                  Icons.favorite,
+                                  color: theme.secondaryColor,
+                                  size: 16.sw(context),
+                                  shadows: [
+                                    Shadow(
+                                      color: theme.backgroundColor,
+                                      blurRadius: 4,
+                                    ),
+                                  ],
+                                ),
+                              ),
+                          ],
+                        ),
+                      ),
+>>>>>>> 29cc640635f8fd317cc04753b31dc19a758576a4
                     ),
                   );
                 },
