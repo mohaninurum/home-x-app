@@ -93,9 +93,12 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
       onAcceptWithDetails: (details) {
         final renderBox = context.findRenderObject() as RenderBox;
         final localPos = renderBox.globalToLocal(details.offset);
+        final double maxY = renderBox.size.height - 140.sh(context);
+        final double safeY = localPos.dy > maxY ? maxY : localPos.dy;
+        
         ref
             .read(homeAppsProvider.notifier)
-            .addAppAt(details.data.packageName, localPos.dx, localPos.dy);
+            .addAppAt(details.data.packageName, localPos.dx, safeY);
       },
       builder: (context, candidateData, rejectedData) {
         return Stack(
@@ -195,7 +198,9 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
                           onDragEnd: (details) {
                             final renderBox = context.findRenderObject() as RenderBox;
                             final localPos = renderBox.globalToLocal(details.offset);
-                            ref.read(widgetPositionProvider.notifier).updatePosition('clock', localPos);
+                            final double maxY = renderBox.size.height - 140.sh(context);
+                            final double safeY = localPos.dy > maxY ? maxY : localPos.dy;
+                            ref.read(widgetPositionProvider.notifier).updatePosition('clock', Offset(localPos.dx, safeY));
                           },
                           childWhenDragging: Opacity(
                             opacity: 0.3,
@@ -267,6 +272,32 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
                                     ],
                                   ),
                                 ),
+                              PopupMenuItem<String>(
+                                value: 'app_info',
+                                child: Row(
+                                  children: [
+                                    Icon(Icons.info_outline, color: theme.primaryColor, size: 20),
+                                    const SizedBox(width: 12),
+                                    Text(
+                                      "App Info",
+                                      style: TextStyle(color: theme.primaryColor, fontWeight: FontWeight.w600),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                              PopupMenuItem<String>(
+                                value: 'uninstall',
+                                child: Row(
+                                  children: [
+                                    const Icon(Icons.delete_outline, color: Colors.redAccent, size: 20),
+                                    const SizedBox(width: 12),
+                                    const Text(
+                                      "Uninstall",
+                                      style: TextStyle(color: Colors.redAccent, fontWeight: FontWeight.w600),
+                                    ),
+                                  ],
+                                ),
+                              ),
                             ],
                           );
 
@@ -280,6 +311,10 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
                             }
                           } else if (result == 'reset_icon') {
                             await ref.read(iconImageProvider.notifier).clearCustomIcon(app.packageName);
+                          } else if (result == 'app_info') {
+                            ref.read(nativeAppServiceProvider).openAppInfo(app.packageName);
+                          } else if (result == 'uninstall') {
+                            ref.read(nativeAppServiceProvider).uninstallApp(app.packageName);
                           }
                         },
                       ),
@@ -329,7 +364,9 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
                                   onDragEnd: (details) {
                                     final renderBox = context.findRenderObject() as RenderBox;
                                     final localPos = renderBox.globalToLocal(details.offset);
-                                    ref.read(homeWidgetsProvider.notifier).updatePosition(w.id, localPos.dx, localPos.dy);
+                                    final double maxY = renderBox.size.height - 140.sh(context);
+                                    final double safeY = localPos.dy > maxY ? maxY : localPos.dy;
+                                    ref.read(homeWidgetsProvider.notifier).updatePosition(w.id, localPos.dx, safeY);
                                   },
                                   child: w.type == 'app'
                                       ? childWidget
@@ -568,29 +605,33 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
       },
     );
 
+    Widget screenBody = PopScope(
+      canPop: false,
+      onPopInvokedWithResult: (didPop, result) {
+        if (didPop) return;
+        if (_drawerController.isCompleted) {
+          _toggleDrawer();
+        }
+      },
+      child: SafeArea(
+        child: mainContent,
+      ),
+    );
+
     if (neoSettings.enabled) {
-      mainContent = NeoMovingBorder(
+      screenBody = NeoMovingBorder(
         borderWidth: neoSettings.borderWidth,
         primaryColor: Color(neoSettings.primaryColorValue),
         secondaryColor: Color(neoSettings.secondaryColorValue),
         speed: neoSettings.speed,
-        child: mainContent,
+        borderRadius: BorderRadius.circular(35),
+        child: screenBody,
       );
     }
 
     return Scaffold(
-      body: PopScope(
-        canPop: false,
-        onPopInvokedWithResult: (didPop, result) {
-          if (didPop) return;
-          if (_drawerController.isCompleted) {
-            _toggleDrawer();
-          }
-        },
-        child: SafeArea(
-          child: mainContent,
-        ),
-      ),
+      backgroundColor: theme.backgroundColor,
+      body: screenBody,
     );
   }
 
