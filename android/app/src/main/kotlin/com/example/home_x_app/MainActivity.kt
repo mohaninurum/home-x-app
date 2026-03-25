@@ -95,26 +95,36 @@ class MainActivity: FlutterFragmentActivity() {
                     }
 
                     "openDefaultLauncherSettings" -> {
-                        if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.Q) {
-                            val roleManager = getSystemService(android.app.role.RoleManager::class.java)
-                            if (roleManager != null && roleManager.isRoleAvailable(android.app.role.RoleManager.ROLE_HOME)) {
-                                if (!roleManager.isRoleHeld(android.app.role.RoleManager.ROLE_HOME)) {
-                                    val intent = roleManager.createRequestRoleIntent(android.app.role.RoleManager.ROLE_HOME)
-                                    startActivityForResult(intent, 1001)
+                        scope.launch(Dispatchers.IO) {
+                            try {
+                                if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.Q) {
+                                    val roleManager = getSystemService(android.app.role.RoleManager::class.java)
+                                    if (roleManager != null && roleManager.isRoleAvailable(android.app.role.RoleManager.ROLE_HOME)) {
+                                        if (!roleManager.isRoleHeld(android.app.role.RoleManager.ROLE_HOME)) {
+                                            val intent = roleManager.createRequestRoleIntent(android.app.role.RoleManager.ROLE_HOME)
+                                            withContext(Dispatchers.Main) {
+                                                startActivityForResult(intent, 1001)
+                                            }
+                                        }
+                                        withContext(Dispatchers.Main) {
+                                            result.success(true)
+                                        }
+                                        return@launch
+                                    }
                                 }
-                                result.success(true)
-                                return@setMethodCallHandler
-                            }
-                        }
 
-                        try {
-                            val intent = Intent(android.provider.Settings.ACTION_HOME_SETTINGS)
-                            startActivity(intent)
-                            result.success(true)
-                        } catch (e: Exception) {
-                            val intent = Intent(android.provider.Settings.ACTION_SETTINGS)
-                            startActivity(intent)
-                            result.success(false)
+                                val intent = Intent(android.provider.Settings.ACTION_HOME_SETTINGS)
+                                withContext(Dispatchers.Main) {
+                                    startActivity(intent)
+                                    result.success(true)
+                                }
+                            } catch (e: Exception) {
+                                val intent = Intent(android.provider.Settings.ACTION_SETTINGS)
+                                withContext(Dispatchers.Main) {
+                                    startActivity(intent)
+                                    result.success(false)
+                                }
+                            }
                         }
                     }
 

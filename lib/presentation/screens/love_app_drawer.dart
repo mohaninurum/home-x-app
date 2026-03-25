@@ -403,20 +403,22 @@ class _LoveAppDrawerState extends ConsumerState<LoveAppDrawer> {
                   final app = filteredApps[index];
                   final isOnHome = homeApps.contains(app.packageName);
 
-                  return InkWell(
-                    onTap: () {
-                      nativeService.launchApp(app.packageName);
-                    },
-                    onLongPress: _onAppLongPress(
-                      context,
-                      app,
-                      isOnHome,
-                      theme,
-                      nativeService,
-                    ),
-                    child: Stack(
-                      alignment: Alignment.center,
-                      children: [AppIconContent(app: app, showLabel: true)],
+                  return Builder(
+                    builder: (itemContext) => InkWell(
+                      onTap: () {
+                        nativeService.launchApp(app.packageName);
+                      },
+                      onLongPress: _onAppLongPress(
+                        itemContext,
+                        app,
+                        false,
+                        theme,
+                        nativeService,
+                      ),
+                      child: Stack(
+                        alignment: Alignment.center,
+                        children: [AppIconContent(app: app, showLabel: true)],
+                      ),
                     ),
                   );
                 },
